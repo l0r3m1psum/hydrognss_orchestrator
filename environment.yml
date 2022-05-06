@@ -1,0 +1,6 @@
+name: snakemake
+channels:
+  - conda-forge
+dependencies:
+  - snakemake
+prefix: /home/flavio/mambaforge/envs/snakemake
