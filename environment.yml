@@ -1,6 +1,6 @@
-name: snakemake
+name: e2es-orchestrator
 channels:
   - conda-forge
 dependencies:
-  - snakemake
-prefix: /home/flavio/mambaforge/envs/snakemake
+  - snakemake-minimal
+prefix: /home/flavio/mambaforge/envs/e2es-orchestrator
