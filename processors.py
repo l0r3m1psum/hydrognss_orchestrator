@@ -9,14 +9,14 @@ class Processor(ABC):
         self.out = output
 
     def run(self):
-        # self.before_run()
-        # cp: subprocess.CompletedProcess = subprocess.run(
-        #     [
-        #         self.ctx['processors'][self.__class__.__name__]['executable'], 
-        #         *self.ctx['processors'][self.__class__.__name__]['args']
-        #     ], 
-        #     check=True, capture_output=True)
-        # self.after_run(cp)
+        self.before_run()
+        cp: subprocess.CompletedProcess = subprocess.run(
+            [
+                self.ctx['processors'][self.__class__.__name__]['executable'], 
+                *self.ctx['processors'][self.__class__.__name__]['args']
+            ], 
+            check=True, capture_output=True)
+        self.after_run(cp)
         self.write()
 
     
