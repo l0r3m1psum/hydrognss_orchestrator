@@ -18,13 +18,12 @@ class Processor(ABC):
 
     def run(self):
         self.before_run()
-        
+
         executable = self.ctx['processors'][self.__class__.__name__]['executable']
         if self.ctx['processors'][self.__class__.__name__]['args']:
-            args = self.ctx['processors'][self.__class__.__name__]['args']
+            args = [executable, *self.ctx['processors'][self.__class__.__name__]['args']]
         else:
-            args = []
-        args = [executable, *args]
+            args = [executable]
         self.log.debug(f'Args\n{str(args)}')
         
         self.log.info(f'Starting processor execution...')
