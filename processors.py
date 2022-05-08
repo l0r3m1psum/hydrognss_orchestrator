@@ -20,7 +20,7 @@ class Processor(ABC):
         self.before_run()
 
         executable = self.ctx['processors'][self.__class__.__name__]['executable']
-        if self.ctx['processors'][self.__class__.__name__]['args']:
+        if len(self.ctx['processors'][self.__class__.__name__]['args']) != 0:
             args = [executable, *self.ctx['processors'][self.__class__.__name__]['args']]
         else:
             args = [executable]
