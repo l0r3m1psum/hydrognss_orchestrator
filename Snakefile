@@ -1,5 +1,6 @@
 from utils import read_from_yaml
 from processors import *
+import shutil
 configfile: 'configurations.yaml'
 
 
@@ -68,4 +69,4 @@ rule L2_SI:
 rule TARGET:
     input: getattr(rules, config['end']).output
     run:
-        pass
+        shutil.rmtree('context')
