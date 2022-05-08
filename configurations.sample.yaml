@@ -1,5 +1,6 @@
 start: L1_A # possible values are listed in 'processors' fields (keys)
 end: L1_B # as above; ending processor cannot be before starting processor (following the order of the list 'processors')
+logLevel: DEBUG
 processors: #available processors (order matters)
   L1_A: 
     executable: '' # absolute path to processor executable
