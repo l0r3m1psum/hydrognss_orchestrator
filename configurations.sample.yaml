@@ -1,35 +1,44 @@
-storageFolder: ''
-start: L1_A
-end: L1_B
-processors:
+start: L1_A # possible values are listed in 'processors' fields (keys)
+end: L1_B # as above; ending processor cannot be before starting processor (following the order of the list 'processors')
+processors: #available processors (order matters)
   L1_A: 
-    executable: '/path/to/l1a.exe'
-    args:
-      - 'first'
-      - 'second'
-      - 'third'
+    executable: '' # absolute path to processor executable
+    args: # arguments list used for execution (order matters, must follow processor specific specs)
+      -
   L1_B: 
-    executable: '/path/to/l1b.exe'
+    executable: 'D:\HydroGNSS\L1BPP\processor\bin\ZTCDataMerge.exe'
     args:
-      - 'first'
-      - 'second'
+      - '"config=D:\HydroGNSS\L1BPP\processor\conf\hgdevConfiguration0p7_ReadL1a.xml,StartDateTime=20211210T03:00:00,StopDateTime=20211210T09:00:00"'
   L2_FB: 
-    executable: '/path/to/l2fb.exe'
+    executable: 'D:\HydroGNSS\L2PP\processors\L2PP_FB.exe'
     args:
-      - 'first'
-      - 'second'
+      - '2021-12-10'
+      - 'D:\HydroGNSS\L2PP\PDGS_NAS_folders'
   L2_SM:
-    executable: '/path/to/l2sm.exe'
+    executable: 'D:\HydroGNSS\L2PP\processors\SML2PP_start.exe'
     args:
-      - 'first'
-      - 'second' 
+      - '-input'
+      - 'D:\HydroGNSS\L2PP\PDGS_NAS_folders\DataRelease\L1A_L1B'
+      - 'D:\HydroGNSS\L2PP\PDGS_NAS_folders\DataRelease\L2OP-SSM'
+      - 'D:\HydroGNSS\L2PP\PDGS_NAS_folders\Auxiliary_Data'
+      - '2021'
+      - '12'
+      - '12'
+      - '1'
+      - '25'
+      - 'L1'
+      - 'L'
   L2_FT:
     executable: '/path/to/l2ft.exe'
     args:
       - 'first'
       - 'second'
   L2_SI:
-    executable: '/path/to/l2si.exe'
+    executable: 'D:\HydroGNSS\L2PP\processors\L2_PSR.exe'
     args:
-      - 'first'
-      - 'second'
+      - '-D'
+      - 'D:\HydroGNSS\L2PP\PDGS_NAS_folders\DataRelease\L1A_L1B\2021-12\10\H06\DDMs.nc'
+      - '-M'
+      - 'D:\HydroGNSS\L2PP\PDGS_NAS_folders\DataRelease\L1A_L1B\2021-12\10\H06\metadata_L1_merged.nc'
+      - '-R'
+      - 'D:\HydroGNSS\L2PP\PDGS_NAS_folders\DataRelease\L2OP-SWS\out.nc'

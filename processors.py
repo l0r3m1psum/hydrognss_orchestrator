@@ -57,14 +57,38 @@ class L2_SM(Processor):
     def __init__(self, context, output) -> None:
         super().__init__(context, output)
 
+    def before_run(self):
+        pass
+    
+    def after_run(self, cp: subprocess.CompletedProcess):
+        pass
+
 class L2_FB(Processor):
     def __init__(self, context, output) -> None:
         super().__init__(context, output)
+    
+    def before_run(self):
+        pass
+    
+    def after_run(self, cp: subprocess.CompletedProcess):
+        pass
 
 class L2_FT(Processor):
     def __init__(self, context, output) -> None:
         super().__init__(context, output)
+    
+    def before_run(self):
+        pass
+    
+    def after_run(self, cp: subprocess.CompletedProcess):
+        pass
 
 class L2_SI(Processor):
     def __init__(self, context, output) -> None:
         super().__init__(context, output)
+
+    def before_run(self):
+        pass
+    
+    def after_run(self, cp: subprocess.CompletedProcess):
+        pass
