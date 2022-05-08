@@ -1,0 +1,35 @@
+storageFolder: ''
+start: L1_A
+end: L1_B
+processors:
+  L1_A: 
+    executable: '/path/to/l1a.exe'
+    args:
+      - 'first'
+      - 'second'
+      - 'third'
+  L1_B: 
+    executable: '/path/to/l1b.exe'
+    args:
+      - 'first'
+      - 'second'
+  L2_FB: 
+    executable: '/path/to/l2fb.exe'
+    args:
+      - 'first'
+      - 'second'
+  L2_SM:
+    executable: '/path/to/l2sm.exe'
+    args:
+      - 'first'
+      - 'second' 
+  L2_FT:
+    executable: '/path/to/l2ft.exe'
+    args:
+      - 'first'
+      - 'second'
+  L2_SI:
+    executable: '/path/to/l2si.exe'
+    args:
+      - 'first'
+      - 'second'

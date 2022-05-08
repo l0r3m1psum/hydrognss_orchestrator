@@ -130,3 +130,8 @@ dmypy.json
 
 # Snakemake
 .snakemake
+
+# others 
+history
+context
+configurations.yaml
