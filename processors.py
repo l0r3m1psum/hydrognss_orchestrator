@@ -39,13 +39,14 @@ class Processor(ABC):
         self.log.info(f'Starting processor execution')
         try:
             cp: subprocess.CompletedProcess = subprocess.run(args, **settings)
-        except Exception as e:
+        except subprocess.CalledProcessError as e:
             self.log.error("Processor error", exc_info=True)
+            self.log.error(f"Output\n{e.output}")
             raise e
-        self.log.info('Processor execution ended.')
-
-        self.after_run(cp)
-        self.end(cp)
+        else:
+            self.log.info('Processor execution ended.')
+            self.after_run(cp)
+            self.end(cp)
 
     
     def end(self, cp: subprocess.CompletedProcess):
