@@ -3,6 +3,7 @@ from utils import write_to_yaml, get_timestamp
 import subprocess
 from abc import ABC, abstractmethod
 import logging
+import os
 
 run_timestamp = get_timestamp()
 class Processor(ABC):
@@ -20,7 +21,7 @@ class Processor(ABC):
     def run(self):
         self.before_run()
 
-        executable = self.ctx['processors'][self.__class__.__name__]['executable']
+        executable = os.path.join(self.ctx['processors'][self.__class__.__name__]['workingDirectory'] , self.ctx['processors'][self.__class__.__name__]['executable'])
         if 'args' in self.ctx['processors'][self.__class__.__name__]:
             args = [executable, *self.ctx['processors'][self.__class__.__name__]['args']]
             args = list(filter(None, args))
