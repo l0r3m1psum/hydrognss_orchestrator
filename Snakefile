@@ -4,6 +4,10 @@ import shutil
 import os
 configfile: 'configurations.yaml'
 
+rule CLEANUP:
+    output: 'context/cleanup'
+    run:
+        pass
 
 rule L1_A:
     output: 'context/L1_A.yaml'
@@ -71,6 +75,6 @@ rule TARGET:
     input: getattr(rules, config['end']).output
     run:
         shutil.rmtree('context')
-        archive_name = os.path.join(config['backupRoot'], get_timestamp())
+        archive_name = os.path.join(config['backupRoot'], f'{run-get_timestamp()}')
         backup_folder =  os.path.join(config['dataRoot'], 'DataRelease')
         shutil.make_archive(archive_name, 'zip', backup_folder)
