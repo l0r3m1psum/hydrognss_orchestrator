@@ -1,3 +1,4 @@
+from msilib.schema import Error
 from utils import write_to_yaml, get_timestamp
 import subprocess
 from abc import ABC, abstractmethod
@@ -20,16 +21,26 @@ class Processor(ABC):
         self.before_run()
 
         executable = self.ctx['processors'][self.__class__.__name__]['executable']
-        if self.ctx['processors'][self.__class__.__name__]['args']:
+        if 'args' in self.ctx['processors'][self.__class__.__name__]:
             args = [executable, *self.ctx['processors'][self.__class__.__name__]['args']]
+            args = list(filter(None, args))
         else:
             args = [executable]
+
+        settings = {
+            'check': True,
+            'capture_output': True,
+            'text': True,
+            'cwd': self.ctx['processors'][self.__class__.__name__]['workingDirectory']
+        }
         self.log.debug(f'Args\n{str(args)}')
-        
-        self.log.info(f'Starting processor execution...')
-        cp: subprocess.CompletedProcess = subprocess.run(
-            args, 
-            check=True, capture_output=True, text=True)
+        self.log.debug(f'Process settings\n{str(settings)}')
+        self.log.info(f'Starting processor execution')
+        try:
+            cp: subprocess.CompletedProcess = subprocess.run(args, **settings)
+        except Exception as e:
+            self.log.error("Processor error", exc_info=True)
+            raise e
         self.log.info('Processor execution ended.')
 
         self.after_run(cp)

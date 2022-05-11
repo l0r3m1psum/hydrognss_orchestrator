@@ -1,22 +1,26 @@
 start: L1_A # possible values are listed in 'processors' fields (keys)
-end: L1_B # as above; ending processor cannot be before starting processor (following the order of the list 'processors')
+end: L2_SM # possible values are listed in 'processors' fields (keys); ending processor cannot be before the one in 'start' field  (following the order of the list 'processors')
 logLevel: DEBUG
-processors: #available processors (order matters)
+storageFolder: ''
+processors: #available processors
   L1_A: 
-    executable: '' # absolute path to processor executable
+    workingDirectory: 'D:\HydroGNSS\E2ES\L1APP' # absolute path to processor delivery
+    executable: '' # relative path to processor executable
     args: # arguments list used for execution (order matters, must follow processor specific specs)
-      -
-  L1_B: 
-    executable: 'D:\HydroGNSS\L1BPP\processor\bin\ZTCDataMerge.exe'
+  L1_B:
+    workingDirectory: 'D:\HydroGNSS\E2ES\L1BPP'
+    executable: '.\bin\ZTCDataMerge.exe'
     args:
       - '"config=D:\HydroGNSS\L1BPP\processor\conf\hgdevConfiguration0p7_ReadL1a.xml,StartDateTime=20211210T03:00:00,StopDateTime=20211210T09:00:00"'
   L2_FB: 
-    executable: 'D:\HydroGNSS\L2PP\processors\L2PP_FB.exe'
+    workingDirectory: 'D:\HydroGNSS\E2ES\L2PP-FB'
+    executable: '.\L2PP_FB.exe'
     args:
       - '2021-12-10'
       - 'D:\HydroGNSS\L2PP\PDGS_NAS_folders'
   L2_SM:
-    executable: 'D:\HydroGNSS\L2PP\processors\SML2PP_start.exe'
+    workingDirectory: 'D:\HydroGNSS\E2ES\L2PP-SSM'
+    executable: '.\SML2PP_start.exe'
     args:
       - '-input'
       - 'D:\HydroGNSS\L2PP\PDGS_NAS_folders\DataRelease\L1A_L1B'
@@ -30,12 +34,12 @@ processors: #available processors (order matters)
       - 'L1'
       - 'L'
   L2_FT:
-    executable: '/path/to/l2ft.exe'
+    workingDirectory: 'D:\HydroGNSS\E2ES\L2PP-FT'
+    executable: '.\L2PPFT.exe'
     args:
-      - 'first'
-      - 'second'
   L2_SI:
-    executable: 'D:\HydroGNSS\L2PP\processors\L2_PSR.exe'
+    workingDirectory: 'D:\HydroGNSS\E2ES\L2PP-SWS'
+    executable: '.\L2_PSR.exe'
     args:
       - '-D'
       - 'D:\HydroGNSS\L2PP\PDGS_NAS_folders\DataRelease\L1A_L1B\2021-12\10\H06\DDMs.nc'
