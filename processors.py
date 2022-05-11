@@ -32,7 +32,8 @@ class Processor(ABC):
             'check': True,
             'capture_output': True,
             'text': True,
-            'cwd': self.ctx['processors'][self.__class__.__name__]['workingDirectory']
+            'cwd': self.ctx['processors'][self.__class__.__name__]['workingDirectory'],
+            'stderr' : subprocess.STDOUT
         }
         self.log.debug(f'Args\n{str(args)}')
         self.log.debug(f'Process settings\n{str(settings)}')
