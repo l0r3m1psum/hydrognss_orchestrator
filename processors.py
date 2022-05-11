@@ -33,7 +33,6 @@ class Processor(ABC):
             'capture_output': True,
             'text': True,
             'cwd': self.ctx['processors'][self.__class__.__name__]['workingDirectory'],
-            'stderr' : subprocess.STDOUT
         }
         self.log.debug(f'Args\n{str(args)}')
         self.log.debug(f'Process settings\n{str(settings)}')
@@ -42,10 +41,11 @@ class Processor(ABC):
             cp: subprocess.CompletedProcess = subprocess.run(args, **settings)
         except subprocess.CalledProcessError as e:
             self.log.error("Processor error", exc_info=True)
-            self.log.error(f"Output\n{e.output}")
+            self.log.error(f"Output\n---stdout---\n{e.stdout}\n---stderr---\n{e.stderr}")
             raise e
         else:
             self.log.info('Processor execution ended.')
+            self.log.debug(f"Output\n---stdout---\n{cp.stdout}\n---stderr---\n{cp.stderr}")
             self.after_run(cp)
             self.end(cp)
 
