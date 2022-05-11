@@ -1,6 +1,7 @@
-from utils import read_from_yaml
+from utils import read_from_yaml, get_timestamp
 from processors import *
 import shutil
+import os
 configfile: 'configurations.yaml'
 
 
@@ -70,3 +71,6 @@ rule TARGET:
     input: getattr(rules, config['end']).output
     run:
         shutil.rmtree('context')
+        archive_name = os.path.join(config['backupRoot'], get_timestamp())
+        backup_folder =  os.path.join(config['dataRoot'], 'DataRelease')
+        shutil.make_archive(archive_name, 'zip', backup_folder)

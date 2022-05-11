@@ -1,7 +1,8 @@
 start: L1_A # possible values are listed in 'processors' fields (keys)
 end: L2_SM # possible values are listed in 'processors' fields (keys); ending processor cannot be before the one in 'start' field  (following the order of the list 'processors')
 logLevel: DEBUG
-storageFolder: ''
+dataRoot: 'D:\HydroGNSS\E2ES\PDGS_NAS_folders'
+backupRoot: 'D:\HydroGNSS\E2ES\RUNS'
 processors: #available processors
   L1_A: 
     workingDirectory: 'D:\HydroGNSS\E2ES\L1APP' # absolute path to processor delivery
@@ -23,9 +24,9 @@ processors: #available processors
     executable: '.\SML2PP_start.exe'
     args:
       - '-input'
-      - 'D:\HydroGNSS\L2PP\PDGS_NAS_folders\DataRelease\L1A_L1B'
-      - 'D:\HydroGNSS\L2PP\PDGS_NAS_folders\DataRelease\L2OP-SSM'
-      - 'D:\HydroGNSS\L2PP\PDGS_NAS_folders\Auxiliary_Data'
+      - 'D:\HydroGNSS\E2ES\PDGS_NAS_folders\DataRelease\L1A_L1B'
+      - 'D:\HydroGNSS\E2ES\PDGS_NAS_folders\DataRelease\L2OP-SSM'
+      - 'D:\HydroGNSS\E2ES\PDGS_NAS_folders\Auxiliary_Data'
       - '2021'
       - '12'
       - '12'
@@ -36,7 +37,6 @@ processors: #available processors
   L2_FT:
     workingDirectory: 'D:\HydroGNSS\E2ES\L2PP-FT'
     executable: '.\L2PPFT.exe'
-    args:
   L2_SI:
     workingDirectory: 'D:\HydroGNSS\E2ES\L2PP-SWS'
     executable: '.\L2_PSR.exe'
