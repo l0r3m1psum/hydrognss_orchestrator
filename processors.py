@@ -66,15 +66,14 @@ class Processor(ABC):
         else:
             self.log.info('Processor execution ended.')
             self.log.debug(f"Output\n---stdout---\n{cp.stdout}\n---stderr---\n{cp.stderr}")
-            self.completed_process = cp
+            self.log.debug(f'Executed Command\n{" ".join(cp.args)}')
+            self.log.debug(f'Execution Output\n---stdout---\n{cp.stdout}\n---stderr---\n{cp.stderr}')
+            self.log.debug(f'Execution Context\n{str(self.ctx)}')
 
     def _after_run(self):
         pass
     
     def _end(self):
-        self.log.debug(f'Executed Command\n{" ".join(self.completed_process.args)}')
-        self.log.debug(f'Execution Output\n---stdout---\n{self.completed_process.stdout}\n---stderr---\n{self.completed_process.stderr}')
-        self.log.debug(f'Execution Context\n{str(self.ctx)}')
         write_to_yaml(self.out, self.ctx)
 
     def start(self, dry=False):
