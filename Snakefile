@@ -16,7 +16,7 @@ rule CLEANUP:
             os.makedirs(dataFolder)
             for directory in DATA_RELEASE_STRUCT:
                 os.makedirs(os.path.join(dataFolder, directory), exist_ok=True)
-        write_to_yaml('context/load.yaml', config)
+        write_to_yaml('context/cleanup.yaml', config)
 
 rule L1_A:
     input: rules.CLEANUP.output
