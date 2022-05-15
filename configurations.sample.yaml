@@ -13,17 +13,17 @@ processors: #available processors
     workingDirectory: 'C:\Users\HydroGNSS\Desktop\L1BPP\'
     script: '.\scripts\Run_L1b_Processor_with_dates.py'
   L2_FB: 
-    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PP-FB\'
+    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PPFB\'
     executable: '.\bin\L2PP_FB.exe'
   L2_SM:
-    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PP-SSM\'
+    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PPSSM\'
     executable: '.\bin\SML2PP_start.exe'
     resolution: '25'
     signal: 'L1'
     polarization: 'L'
   L2_FT:
-    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PP-FT\'
+    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PPFT\'
     executable: '.\bin\L2PPFT.exe'
   L2_SI:
-    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PP-SWS\'
+    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PPSWS\'
     script: '.\scripts\some_script.py'
