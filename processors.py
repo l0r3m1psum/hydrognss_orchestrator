@@ -1,8 +1,11 @@
 from msilib.schema import Error
-from utils import write_to_yaml, get_timestamp
+from utils import write_to_yaml, get_timestamp, get_data_time_boudaries_from
 import subprocess
 from abc import ABC
 import logging
+import os
+
+L1A_L1B_PATH = 'DataRelease/L1A_L1B'
 
 run_timestamp = get_timestamp()
 
@@ -13,15 +16,18 @@ class Processor(ABC):
         self.out = output
         self.command = []
         self.completed_process = None
+        # init logging
         self.log = logging.getLogger(self.__class__.__name__)
         self.log.setLevel(context['logLevel'])
-        if log_file:
-            self.fh = logging.FileHandler(log_file)
-            self.fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-            self.log.addHandler(self.fh)
+        fh = logging.FileHandler(log_file)
+        fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+        self.log.addHandler(fh)
     
-    def _before_build_command():
-        pass
+    def _before_build_command(self):
+        self.log.info(f'Getting data time frame...')
+        time_frame = get_data_time_boudaries_from(os.path.join(self.ctx, L1A_L1B_PATH))
+        self.log.debug(f'Found time frame: {time_frame}')
+        self.ctx['processors'][self.__class__.__name__]['args'] = time_frame
     
     def _build_command(self):
         if 'executable' in self.ctx['processors'][self.__class__.__name__]:
@@ -71,18 +77,30 @@ class Processor(ABC):
         self.log.debug(f'Execution Context\n{str(self.ctx)}')
         write_to_yaml(self.out, self.ctx)
 
-    def start(self):
+    def start(self, dry=False):
+        self.log.info('_before_build_command')
         self._before_build_command()
+        self.log.info('_build_command')
         self._build_command()
+        self.log.info('_before_run')
         self._before_run()
-        self._run()
+        if not dry:
+            self.log.info('_run')
+            self._run()
+        else:
+            self.log.info('dry mode, skip processing...')
+        self.log.info('_after_run')
         self._after_run()
+        self.log.info('_end')
         self._end()
 
 
 class L1_A(Processor):
     def __init__(self, context, output) -> None:
         super().__init__(context, output)
+    
+    def _before_build_command(self):
+        pass
 
     def _after_run(self):
         # copia i prodotti generati dal processore nella storage directory
@@ -92,26 +110,19 @@ class L1_B(Processor):
     def __init__(self, context, output) -> None:
         super().__init__(context, output)
 
-    def _before_build_command(self):
-        # se gia esistnono nel contesto, non fare nulla
-        if 'args' in self.ctx['processors'][self.__class__.__name__]:
-            pass
-        #altrimenti vai a recuperarli
-        else:
-            self.ctx['processors'][self.__class__.__name__]['args'] = ['2021-12-10', '2021-12-12']
-    
-
 class L2_SM(Processor):
+    argsTemplate = '-input {dataRoot}\DataRelease\L1A_L1B {dataRoot}\DataRelease\L2OP-SSM {dataRoot}\Auxiliary_Data {startYear} {startMonth} {startDay} {numberOfDays} {resolution} {signal} {polarization}'
     def __init__(self, context, output) -> None:
         super().__init__(context, output)
 
-
+    def _before_build_command(self):
+        #TODO
+        args = self.argsTemplate.split(' ')
+        self.ctx['processors'][self.__class__.__name__]['args'] = ''
 
 class L2_FB(Processor):
     def __init__(self, context, output) -> None:
         super().__init__(context, output)
-
-
 
 class L2_FT(Processor):
     def __init__(self, context, output) -> None:

@@ -1,49 +1,30 @@
 start: L1_A # possible values are listed in 'processors' fields (keys)
 end: L2_SM # possible values are listed in 'processors' fields (keys); ending processor cannot be before the one in 'start' field  (following the order of the list 'processors')
 logLevel: DEBUG
-dataRoot: 'D:\HydroGNSS\E2ES\PDGS_NAS_folders'
-backupRoot: 'D:\HydroGNSS\E2ES\RUNS'
+dataRoot: 'C:\Users\HydroGNSS\Desktop\PDGS_NAS_folder'
+backupRoot: 'C:\Users\HydroGNSS\Desktop\DataRelease_backups'
+backupFile: ''
+dryMode: true
 processors: #available processors
   L1_A: 
-    workingDirectory: 'D:\HydroGNSS\E2ES\L1APP' # absolute path to processor delivery
-    executable: '' # relative path to processor executable
-    args: # arguments list used for execution (order matters, must follow processor specific specs)
+    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L1APP\' # absolute path to processor delivery folder
+    executable: '.\bin\STARTroutine_Simulator_GNSSR.exe' # relative path to processor executable
+    tempDirectory: '.\'
   L1_B:
-    workingDirectory: 'D:\HydroGNSS\E2ES\L1BPP'
-    executable: '.\bin\ZTCDataMerge.exe'
-    args:
-      - '"config=D:\HydroGNSS\L1BPP\processor\conf\hgdevConfiguration0p7_ReadL1a.xml,StartDateTime=20211210T03:00:00,StopDateTime=20211210T09:00:00"'
+    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L1BPP\'
+    script: '.\scripts\Run_L1b_Processor_with_dates.py'
   L2_FB: 
-    workingDirectory: 'D:\HydroGNSS\E2ES\L2PP-FB'
-    executable: '.\L2PP_FB.exe'
-    args:
-      - '2021-12-10'
-      - 'D:\HydroGNSS\L2PP\PDGS_NAS_folders'
+    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PP-FB\'
+    executable: '.\bin\L2PP_FB.exe'
   L2_SM:
-    workingDirectory: 'D:\HydroGNSS\E2ES\L2PP-SSM'
-    executable: '.\SML2PP_start.exe'
-    args:
-      - '-input'
-      - 'D:\HydroGNSS\E2ES\PDGS_NAS_folders\DataRelease\L1A_L1B'
-      - 'D:\HydroGNSS\E2ES\PDGS_NAS_folders\DataRelease\L2OP-SSM'
-      - 'D:\HydroGNSS\E2ES\PDGS_NAS_folders\Auxiliary_Data'
-      - '2021'
-      - '12'
-      - '12'
-      - '1'
-      - '25'
-      - 'L1'
-      - 'L'
+    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PP-SSM\'
+    executable: '.\bin\SML2PP_start.exe'
+    resolution: '25'
+    signal: 'L1'
+    polarization: 'L'
   L2_FT:
-    workingDirectory: 'D:\HydroGNSS\E2ES\L2PP-FT'
-    executable: '.\L2PPFT.exe'
+    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PP-FT\'
+    executable: '.\bin\L2PPFT.exe'
   L2_SI:
-    workingDirectory: 'D:\HydroGNSS\E2ES\L2PP-SWS'
-    executable: '.\L2_PSR.exe'
-    args:
-      - '-D'
-      - 'D:\HydroGNSS\L2PP\PDGS_NAS_folders\DataRelease\L1A_L1B\2021-12\10\H06\DDMs.nc'
-      - '-M'
-      - 'D:\HydroGNSS\L2PP\PDGS_NAS_folders\DataRelease\L1A_L1B\2021-12\10\H06\metadata_L1_merged.nc'
-      - '-R'
-      - 'D:\HydroGNSS\L2PP\PDGS_NAS_folders\DataRelease\L2OP-SWS\out.nc'
+    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PP-SWS\'
+    script: '.\scripts\some_script.py'
