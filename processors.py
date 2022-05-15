@@ -26,22 +26,23 @@ class Processor(ABC):
     def _before_build_command(self):
         self.log.info(f'Getting data time frame...')
         time_frame = get_data_time_boudaries_from(os.path.join(self.ctx['dataRoot'], L1A_L1B_PATH))
-        self.log.debug(f'Found time frame: {time_frame}')
+        self.log.debug(f'{time_frame}')
         self.ctx['processors'][self.__class__.__name__]['args'] = time_frame
     
     def _build_command(self):
         if 'executable' in self.ctx['processors'][self.__class__.__name__]:
+            self.log.debug('Found executable in config')
             command = [self.ctx['processors'][self.__class__.__name__]['executable']]
         elif 'script' in self.ctx['processors'][self.__class__.__name__]:
+            self.log.debug('Found script in config')
             command = ['python', self.ctx['processors'][self.__class__.__name__]]
         else:
             self.log.error('Malformed config yaml: missing script or executable relative path')
             raise Exception('Malformed configuration yaml')
-        
         if 'args' in self.ctx['processors'][self.__class__.__name__]:
             command = [*command, *self.ctx['processors'][self.__class__.__name__]['args']]
             command = list(filter(None, command))
-        
+        self.log.debug(f'Built command: {command}')
         self.command = command
     
     def _before_run(self):
@@ -54,7 +55,6 @@ class Processor(ABC):
             'text': True,
             'cwd': self.ctx['processors'][self.__class__.__name__]['workingDirectory'],
         }
-        self.log.debug(f'Command being executed\n{str(self.command)}')
         self.log.debug(f'Process settings\n{str(settings)}')
         self.log.info(f'Starting processor execution')
         try:
@@ -66,7 +66,6 @@ class Processor(ABC):
         else:
             self.log.info('Processor execution ended.')
             self.log.debug(f"Output\n---stdout---\n{cp.stdout}\n---stderr---\n{cp.stderr}")
-            self.log.debug(f'Executed Command\n{" ".join(cp.args)}')
             self.log.debug(f'Execution Output\n---stdout---\n{cp.stdout}\n---stderr---\n{cp.stderr}')
             self.log.debug(f'Execution Context\n{str(self.ctx)}')
 
