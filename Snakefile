@@ -89,6 +89,6 @@ rule TARGET:
     input: getattr(rules, config['end']).output
     run:
         shutil.rmtree('context')
-        archive_name = os.path.join(config['backupRoot'], f'{run-get_timestamp()}')
+        archive_name = os.path.join(config['backupRoot'], f'run_{get_timestamp()}')
         folder_to_backup =  os.path.join(config['dataRoot'], 'DataRelease')
         shutil.make_archive(archive_name, 'zip', folder_to_backup)
