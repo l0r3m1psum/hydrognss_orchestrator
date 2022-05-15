@@ -25,7 +25,7 @@ class Processor(ABC):
     
     def _before_build_command(self):
         self.log.info(f'Getting data time frame...')
-        time_frame = get_data_time_boudaries_from(os.path.join(self.ctx, L1A_L1B_PATH))
+        time_frame = get_data_time_boudaries_from(os.path.join(self.ctx['dataRoot'], L1A_L1B_PATH))
         self.log.debug(f'Found time frame: {time_frame}')
         self.ctx['processors'][self.__class__.__name__]['args'] = time_frame
     
