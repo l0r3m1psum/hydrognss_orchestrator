@@ -32,14 +32,14 @@ class Processor(ABC):
         if 'executable' in self.ctx['processors'][self.__class__.__name__]:
             self.log.debug('Found executable in config')
             command = [os.path.join(
-                self.ctx['processors'][self.__class__.__name__]['workingDirectory'],
-                self.ctx['processors'][self.__class__.__name__]['executable']
+                os.path.normpath(self.ctx['processors'][self.__class__.__name__]['workingDirectory']),
+                os.path.normpath(self.ctx['processors'][self.__class__.__name__]['executable'])
             )]
         elif 'script' in self.ctx['processors'][self.__class__.__name__]:
             self.log.debug('Found script in config')
             command = ['python', os.path.join(
-                self.ctx['processors'][self.__class__.__name__]['workingDirectory'],
-                self.ctx['processors'][self.__class__.__name__]['script']
+                os.path.normpath(self.ctx['processors'][self.__class__.__name__]['workingDirectory']),
+                os.path.normpath(self.ctx['processors'][self.__class__.__name__]['script'])
             )]
         else:
             self.log.error(
