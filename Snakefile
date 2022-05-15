@@ -9,11 +9,12 @@ DATA_RELEASE_STRUCT = ['L1A_L1B','L2OP-FB','L2OP-FT','L2OP-SI','L2OP-SM','L1A-SW
 rule CLEANUP:
     output: 'context/cleanup.yaml'
     run:
-        dataFolder =  os.path.join(config['dataRoot'], 'DataRelease')
-        shutil.rmtree(dataFolder)
-        os.makedirs(dataFolder)
-        for directory in DATA_RELEASE_STRUCT:
-            os.makedirs(os.path.join(dataFolder, directory), exist_ok=True)
+        if not config['dryMode']:
+            dataFolder =  os.path.join(config['dataRoot'], 'DataRelease')
+            shutil.rmtree(dataFolder)
+            os.makedirs(dataFolder)
+            for directory in DATA_RELEASE_STRUCT:
+                os.makedirs(os.path.join(dataFolder, directory), exist_ok=True)
 
 rule L1_A:
     input: rules.CLEANUP.output
@@ -89,6 +90,7 @@ rule TARGET:
     input: getattr(rules, config['end']).output
     run:
         shutil.rmtree('context')
-        archive_name = os.path.join(config['backupRoot'], f'run_{get_timestamp()}')
-        folder_to_backup =  os.path.join(config['dataRoot'], 'DataRelease')
-        shutil.make_archive(archive_name, 'zip', folder_to_backup)
+        if not config['dryMode']:
+            archive_name = os.path.join(config['backupRoot'], f'run_{get_timestamp()}')
+            folder_to_backup =  os.path.join(config['dataRoot'], 'DataRelease')
+            shutil.make_archive(archive_name, 'zip', folder_to_backup)
