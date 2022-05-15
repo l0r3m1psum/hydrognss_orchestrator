@@ -26,6 +26,7 @@ class Processor(ABC):
         self.log.addHandler(fh)
 
     def _build_args(self):
+        self.log.debug('Not implemented...')
         pass
 
     def _build_command(self):
@@ -49,10 +50,11 @@ class Processor(ABC):
             command = [*command, *self.ctx['processors']
                        [self.__class__.__name__]['args']]
             command = list(filter(None, command))
-        self.log.debug(f'Built command: {command}')
+        self.log.debug(f'Built command: {" ".join(command)}')
         self.command = command
 
     def _before_run(self):
+        self.log.debug('Not implemented...')
         pass
 
     def _run(self):
@@ -81,6 +83,7 @@ class Processor(ABC):
             self.log.debug(f'Execution Context\n{str(self.ctx)}')
 
     def _after_run(self):
+        self.log.debug('Not implemented...')
         pass
 
     def _end(self):
