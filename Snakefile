@@ -1,6 +1,7 @@
 from utils import read_from_yaml, get_timestamp, write_to_yaml
 from processors import *
 import shutil
+import zipfile
 import os
 configfile: 'configurations.yaml'
 
@@ -25,10 +26,13 @@ rule L1_A:
         p.start(dry=config['dryMode'])
 
 rule LOAD:
+    input:  rules.CLEANUP.output if (config['backupRoot'] and config['backupFile']) else []
     output: 'context/load.yaml'
-    input: os.path.join(config['backupRoot'], config['backupFile'])
     run:
-        # unpack input file into data root
+        # unpack backup file into data root
+        backup_zip = os.path.join(config['backupRoot'], config['backupFile'])
+        with zipfile.ZipFile(backup_zip, 'r') as zip_ref:
+            zip_ref.extractall(os.path.join(config['dataRoot'], 'DataRelease'))
         write_to_yaml('context/load.yaml', config)
 
 rule L1_B:
