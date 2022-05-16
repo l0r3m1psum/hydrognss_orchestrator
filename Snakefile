@@ -31,9 +31,10 @@ rule LOAD:
     output: 'context/load.yaml'
     run:
         # unpack backup file into data root
-        backup_zip = os.path.join(config['backupRoot'], config['backupFile'])
-        with zipfile.ZipFile(backup_zip, 'r') as zip_ref:
-            zip_ref.extractall(os.path.join(config['dataRoot'], 'DataRelease'))
+        if (config['backupRoot'] and config['backupFile'] and not config['dryMode']):
+            backup_zip = os.path.join(config['backupRoot'], config['backupFile'])
+            with zipfile.ZipFile(backup_zip, 'r') as zip_ref:
+                zip_ref.extractall(os.path.join(config['dataRoot'], 'DataRelease'))
         write_to_yaml('context/load.yaml', config)
 
 rule L1_B:
