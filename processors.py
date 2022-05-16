@@ -186,7 +186,7 @@ class L2_SI(Processor):
 
     def _build_args(self):
         args = self.argsTemplate
-        args = args.replace('{L1A_L1B_folder}',L1A_L1B_PATH)
+        args = args.replace('{L1A_L1B_folder}',os.path.join(self.ctx['dataRoot'],L1A_L1B_PATH))
         self.log.debug(f'Built args string: {args}')
         self.ctx['processors'][self.__class__.__name__]['args'] = args.split(
             ' ')
