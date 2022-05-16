@@ -50,7 +50,7 @@ class Processor(ABC):
             command = [*command, *self.ctx['processors']
                        [self.__class__.__name__]['args']]
             command = list(filter(None, command))
-        self.log.debug(f'Built command: {" ".join(command)}')
+        self.log.debug(f'Built command string: {" ".join(command)}')
         self.command = command
 
     def _before_run(self):
@@ -170,7 +170,6 @@ class L2_FB(Processor):
         args = args.replace('{endDate}', time_frame[1])
         args = args.replace('{dataRoot}', self.ctx['dataRoot'])
         self.log.debug(f'Built args string: {args}')
-
         self.ctx['processors'][self.__class__.__name__]['args'] = args.split(
             ' ')
 
@@ -181,5 +180,14 @@ class L2_FT(Processor):
 
 
 class L2_SI(Processor):
+    argsTemplate = '-P {L1A_L1B_folder}'
     def __init__(self, context, output) -> None:
         super().__init__(context, output)
+
+    def _build_args(self):
+        args = self.argsTemplate
+        args = args.replace('{L1A_L1B_folder}',L1A_L1B_PATH)
+        self.log.debug(f'Built args string: {args}')
+        self.ctx['processors'][self.__class__.__name__]['args'] = args.split(
+            ' ')
+

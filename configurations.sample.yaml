@@ -25,5 +25,5 @@ processors: #available processors
     workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PPFT\'
     executable: '.\bin\L2PPFT.exe'
   L2_SI:
-    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PPSWS\'
-    script: '.\scripts\some_script.py'
+    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PPSI\'
+    script: '.\scripts\Run_PSR.py'
