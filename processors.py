@@ -5,7 +5,8 @@ from abc import ABC
 import logging
 import os
 
-L1A_L1B_PATH = 'DataRelease/L1A_L1B'
+DATA_RELEASE = 'DataRelease'
+L1A_L1B = DATA_RELEASE + '\L1A_L1B'
 
 run_timestamp = get_timestamp()
 
@@ -123,7 +124,7 @@ class L1_B(Processor):
 
     def _build_args(self):
         time_frame = get_data_time_boudaries_from(
-            os.path.join(self.ctx['dataRoot'], L1A_L1B_PATH))
+            os.path.join(self.ctx['dataRoot'], L1A_L1B))
         self.log.debug(f'Built args string: {" ".join(time_frame)}')
         self.ctx['processors'][self.__class__.__name__]['args'] = time_frame
 
@@ -136,7 +137,7 @@ class L2_SM(Processor):
 
     def _build_args(self):
         time_frame = get_data_time_boudaries_from(
-            os.path.join(self.ctx['dataRoot'], L1A_L1B_PATH))
+            os.path.join(self.ctx['dataRoot'], L1A_L1B))
         # substitutions
         args = self.argsTemplate
         args = args.replace('{dataRoot}', self.ctx['dataRoot'])
@@ -163,7 +164,7 @@ class L2_FB(Processor):
 
     def _build_args(self):
         time_frame = get_data_time_boudaries_from(
-            os.path.join(self.ctx['dataRoot'], L1A_L1B_PATH))
+            os.path.join(self.ctx['dataRoot'], L1A_L1B))
         # substitutions
         args = self.argsTemplate
         args = args.replace('{startDate}', time_frame[0])
@@ -180,13 +181,13 @@ class L2_FT(Processor):
 
 
 class L2_SI(Processor):
-    argsTemplate = '-P {L1A_L1B_folder}'
+    argsTemplate = '-P {DataRelease_folder}'
     def __init__(self, context, output) -> None:
         super().__init__(context, output)
 
     def _build_args(self):
         args = self.argsTemplate
-        args = args.replace('{L1A_L1B_folder}',os.path.join(self.ctx['dataRoot'],os.path.normpath(L1A_L1B_PATH)))
+        args = args.replace('{DataRelease_folder}',os.path.join(self.ctx['dataRoot'],DATA_RELEASE))
         self.log.debug(f'Built args string: {args}')
         self.ctx['processors'][self.__class__.__name__]['args'] = args.split(
             ' ')
