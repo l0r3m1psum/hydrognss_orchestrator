@@ -73,12 +73,10 @@ class Processor(ABC):
         except subprocess.CalledProcessError as e:
             self.log.error("Processor error", exc_info=True)
             self.log.error(
-                f"Output\n---stdout---\n{e.stdout}\n---stderr---\n{e.stderr}")
+                f"Execution Output\n---stdout---\n{e.stdout}\n---stderr---\n{e.stderr}")
             raise e
         else:
             self.log.info('Processor execution ended.')
-            self.log.debug(
-                f"Output\n---stdout---\n{cp.stdout}\n---stderr---\n{cp.stderr}")
             self.log.debug(
                 f'Execution Output\n---stdout---\n{cp.stdout}\n---stderr---\n{cp.stderr}')
             self.log.debug(f'Execution Context\n{str(self.ctx)}')
