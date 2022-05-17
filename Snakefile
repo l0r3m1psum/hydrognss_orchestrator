@@ -10,6 +10,7 @@ DATA_RELEASE_STRUCT = ['L1A_L1B','L2OP-FB','L2OP-FT','L2OP-SI','L2OP-SM','L1A-SW
 rule CLEANUP:
     output: 'context/cleanup.yaml'
     run:
+        shutil.rmtree('context')
         if not config['dryMode']:
             dataFolder =  os.path.join(config['dataRoot'], 'DataRelease')
             shutil.rmtree(dataFolder)
@@ -27,7 +28,7 @@ rule L1_A:
         p.start(dry=config['dryMode'])
 
 rule LOAD:
-    input:  rules.CLEANUP.output if (config['backupRoot'] and config['backupFile']) else []
+    input:  rules.CLEANUP.output
     output: 'context/load.yaml'
     run:
         # unpack backup file into data root
@@ -96,7 +97,6 @@ rule TARGET:
     input: getattr(rules, config['end']).output
     run:
         ctx = read_from_yaml(input[0])
-        shutil.rmtree('context')
         if not config['dryMode']:
             archive_name = os.path.join(config['backupRoot'], f'{config["backupPrefix"]}{ctx["timestamp"]}')
             folder_to_backup =  os.path.join(config['dataRoot'], 'DataRelease')
