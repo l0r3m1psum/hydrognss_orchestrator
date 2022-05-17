@@ -129,9 +129,10 @@ class L1_A(Processor):
         l1a_data_path_dst =  os.path.join(self.ctx['dataRoot'], L1A_L1B)
         self.log.debug(f'Copying L1A data from {l1a_data_path_src} to {l1a_data_path_dst}')
         shutil.copytree(l1a_data_path_src, l1a_data_path_dst, dirs_exist_ok=True)
+        pam_data_path_src = None
         for f in os.listdir(l1a_data_path_src):
-            if re.match('mat$', f):
-                pam_data_path_src = f
+            if re.match('.*mat', f):
+                pam_data_path_src = os.path.join(l1a_data_path_src, f)
                 break
         if not pam_data_path_src:
             self.log.debug(f'Files in {l1a_data_path_src}: {os.listdir(l1a_data_path_src)}')
