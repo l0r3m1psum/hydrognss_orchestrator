@@ -10,8 +10,6 @@ DATA_RELEASE_STRUCT = ['L1A_L1B','L2OP-FB','L2OP-FT','L2OP-SI','L2OP-SM','L1A-SW
 rule CLEANUP:
     output: 'context/cleanup.yaml'
     run:
-        shutil.rmtree('context')
-        os.makedirs('context')
         if not config['dryMode']:
             dataFolder =  os.path.join(config['dataRoot'], 'DataRelease')
             shutil.rmtree(dataFolder)
@@ -44,10 +42,7 @@ rule L1_B:
     input:  rules.LOAD.output if config['start'] == 'L1_B' else rules.L1_A.output
     output: 'context/L1_B.yaml'
     run:
-        if config['start'] == 'L1_B':
-            ctx = config
-        else:
-            ctx = read_from_yaml(input[0])
+        ctx = read_from_yaml(input[0])
         p = L1_B(ctx, output[0])
         p.start()
 
@@ -55,10 +50,7 @@ rule L2_FT:
     input: rules.LOAD.output if config['start'] == 'L2_FT' else rules.L1_B.output
     output: 'context/L2_FT.yaml'
     run:
-        if config['start'] == 'L2_FT':
-            ctx = config
-        else:
-            ctx = read_from_yaml(input[0])
+        ctx = read_from_yaml(input[0])
         p = L2_FT(ctx, output[0])
         p.start()
 
@@ -66,10 +58,7 @@ rule L2_FB:
     input: rules.LOAD.output if config['start'] == 'L2_FB' else rules.L1_B.output
     output: 'context/L2_FB.yaml'
     run:
-        if config['start'] == 'L2_FB':
-            ctx = config
-        else:
-            ctx = read_from_yaml(input[0])
+        ctx = read_from_yaml(input[0])
         p = L2_FB(ctx, output[0])
         p.start()
 
@@ -77,10 +66,7 @@ rule L2_SM:
     input: rules.LOAD.output if config['start'] == 'L2_SM' else rules.L1_B.output
     output: f'context/L2_SM.yaml'
     run:
-        if config['start'] == 'L2_SM':
-            ctx = config
-        else:
-            ctx = read_from_yaml(input[0])
+        ctx = read_from_yaml(input[0])
         p = L2_SM(ctx, output[0])
         p.start()
 
@@ -88,10 +74,7 @@ rule L2_SI:
     input: rules.LOAD.output if config['start'] == 'L2_SI' else rules.L1_B.output
     output: 'context/L2_SI.yaml'
     run:
-        if config['start'] == 'L2_SI':
-            ctx = config
-        else:
-            ctx = read_from_yaml(input[0])
+        ctx = read_from_yaml(input[0])
         p = L2_SI(ctx, output[0])
         p.start()
 
@@ -103,3 +86,5 @@ rule TARGET:
             archive_name = os.path.join(ctx['backupRoot'], f'{ctx["backupPrefix"]}_{ctx["timestamp"]}')
             folder_to_backup =  os.path.join(ctx['dataRoot'], 'DataRelease')
             shutil.make_archive(archive_name, 'zip', folder_to_backup)
+            shutil.rmtree('context')
+
