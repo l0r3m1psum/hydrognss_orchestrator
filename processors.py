@@ -115,7 +115,7 @@ class L1_A(Processor):
         # out_lines = self.completed_process.stdout.splitlines()
         # out_lines = list(filter(None, out_lines))
         # l1a_tmp_dir_path = out_lines[len(out_lines) - 1]
-        with open(os.path.join(self.ctx['processors'][__class__.__name__]['workingDirectory'], 'config', 'AbsoluteFilePath.txt')) as f:
+        with open(os.path.join(self.ctx['processors'][__class__.__name__]['workingDirectory'], 'conf', 'AbsoluteFilePath.txt')) as f:
             l1a_output_path = f.readlines().pop()
         self.log.debug(f'L1A generated output: {l1a_output_path}')
         l1a_data_path = os.path.join(l1a_output_path, DATA_RELEASE)
