@@ -113,7 +113,7 @@ class L1_A(Processor):
         super().__init__(context, output)
 
     def _before_run(self):
-        self.cwd = os.path.join(self.cwd, r'\bin')
+        self.cwd = os.path.join(self.cwd, 'bin')
         self.log.debug(f'Updated working directory {self.cwd}')
 
     
