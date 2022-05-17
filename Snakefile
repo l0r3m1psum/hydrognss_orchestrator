@@ -20,24 +20,25 @@ rule CLEANUP:
                 os.makedirs(os.path.join(dataFolder, directory), exist_ok=True)
         write_to_yaml('context/cleanup.yaml', config)
 
+rule LOAD:
+    input:  rules.CLEANUP.output
+    output: 'context/load.yaml'
+    run:
+        ctx = read_from_yaml(input[0])
+        # unpack backup file into data root
+        if (ctx['backupRoot'] and ctx['backupFile'] and not ctx['dryMode']):
+            backup_zip = os.path.join(ctx['backupRoot'], ctx['backupFile'])
+            with zipfile.ZipFile(backup_zip, 'r') as zip_ref:
+                zip_ref.extractall(os.path.join(ctx['dataRoot'], 'DataRelease'))
+        write_to_yaml('context/load.yaml', ctx)
+
 rule L1_A:
     input: rules.CLEANUP.output
     output: 'context/L1_A.yaml'
     run:
         ctx = config
         p = L1_A(ctx, output[0])
-        p.start(dry=config['dryMode'])
-
-rule LOAD:
-    input:  rules.CLEANUP.output
-    output: 'context/load.yaml'
-    run:
-        # unpack backup file into data root
-        if (config['backupRoot'] and config['backupFile'] and not config['dryMode']):
-            backup_zip = os.path.join(config['backupRoot'], config['backupFile'])
-            with zipfile.ZipFile(backup_zip, 'r') as zip_ref:
-                zip_ref.extractall(os.path.join(config['dataRoot'], 'DataRelease'))
-        write_to_yaml('context/load.yaml', config)
+        p.start()
 
 rule L1_B:
     input:  rules.LOAD.output if config['start'] == 'L1_B' else rules.L1_A.output
@@ -48,7 +49,7 @@ rule L1_B:
         else:
             ctx = read_from_yaml(input[0])
         p = L1_B(ctx, output[0])
-        p.start(dry=config['dryMode'])
+        p.start()
 
 rule L2_FT:
     input: rules.LOAD.output if config['start'] == 'L2_FT' else rules.L1_B.output
@@ -59,7 +60,7 @@ rule L2_FT:
         else:
             ctx = read_from_yaml(input[0])
         p = L2_FT(ctx, output[0])
-        p.start(dry=config['dryMode'])
+        p.start()
 
 rule L2_FB:
     input: rules.LOAD.output if config['start'] == 'L2_FB' else rules.L1_B.output
@@ -70,7 +71,7 @@ rule L2_FB:
         else:
             ctx = read_from_yaml(input[0])
         p = L2_FB(ctx, output[0])
-        p.start(dry=config['dryMode'])
+        p.start()
 
 rule L2_SM:
     input: rules.LOAD.output if config['start'] == 'L2_SM' else rules.L1_B.output
@@ -81,7 +82,7 @@ rule L2_SM:
         else:
             ctx = read_from_yaml(input[0])
         p = L2_SM(ctx, output[0])
-        p.start(dry=config['dryMode'])
+        p.start()
 
 rule L2_SI:
     input: rules.LOAD.output if config['start'] == 'L2_SI' else rules.L1_B.output
@@ -92,13 +93,13 @@ rule L2_SI:
         else:
             ctx = read_from_yaml(input[0])
         p = L2_SI(ctx, output[0])
-        p.start(dry=config['dryMode'])
+        p.start()
 
 rule TARGET:
     input: getattr(rules, config['end']).output
     run:
         ctx = read_from_yaml(input[0])
         if not config['dryMode']:
-            archive_name = os.path.join(config['backupRoot'], f'{config["backupPrefix"]}{ctx["timestamp"]}')
-            folder_to_backup =  os.path.join(config['dataRoot'], 'DataRelease')
+            archive_name = os.path.join(ctx['backupRoot'], f'{ctx["backupPrefix"]}_{ctx["timestamp"]}')
+            folder_to_backup =  os.path.join(ctx['dataRoot'], 'DataRelease')
             shutil.make_archive(archive_name, 'zip', folder_to_backup)

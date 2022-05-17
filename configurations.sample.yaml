@@ -4,6 +4,7 @@ logLevel: DEBUG # for logging purposes
 dataRoot: 'C:\Users\HydroGNSS\Desktop\PDGS_NAS_folder' # absolute path to PDGS_NAS_folder
 backupRoot: 'C:\Users\HydroGNSS\Desktop\DataRelease_backups' # absolute path to backup folder
 backupFile: # relative path to backup file which has to be loaded
+backupPrefix: ''
 dryMode: false
 processors: #available processors
   L1_A: 
