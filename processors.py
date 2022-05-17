@@ -111,6 +111,11 @@ class L1_A(Processor):
     def __init__(self, context, output) -> None:
         super().__init__(context, output)
 
+    def _before_run(self):
+        self.ctx['processors'][__class__.__name__]['workingDirectory'] = self.ctx['processors'][__class__.__name__]['workingDirectory'] + r'\bin'
+        self.log.debug(f'Updated working directory {self.ctx["processors"][__class__.__name__]["workingDirectory"]}')
+
+    
     def _after_run(self):
         # out_lines = self.completed_process.stdout.splitlines()
         # out_lines = list(filter(None, out_lines))
