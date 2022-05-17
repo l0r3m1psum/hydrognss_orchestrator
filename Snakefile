@@ -11,6 +11,7 @@ rule CLEANUP:
     output: 'context/cleanup.yaml'
     run:
         shutil.rmtree('context')
+        os.makedirs('context')
         if not config['dryMode']:
             dataFolder =  os.path.join(config['dataRoot'], 'DataRelease')
             shutil.rmtree(dataFolder)
