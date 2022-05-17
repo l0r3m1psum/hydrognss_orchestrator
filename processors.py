@@ -16,6 +16,7 @@ class Processor(ABC):
         if 'timestamp' not in self.ctx:
             self.ctx['timestamp'] = get_timestamp()
         self.out = output
+        self.cwd = self.ctx['processors'][self.__class__.__name__]['workingDirectory']
         self.command = []
         self.completed_process = None
         # init logging
@@ -63,7 +64,7 @@ class Processor(ABC):
             'check': True,
             'capture_output': True,
             'text': True,
-            'cwd': self.ctx['processors'][self.__class__.__name__]['workingDirectory'],
+            'cwd': self.cwd,
         }
         self.log.debug(f'Process settings\n{str(settings)}')
         self.log.info(f'Starting processor execution')
@@ -112,8 +113,8 @@ class L1_A(Processor):
         super().__init__(context, output)
 
     def _before_run(self):
-        self.ctx['processors'][__class__.__name__]['workingDirectory'] = self.ctx['processors'][__class__.__name__]['workingDirectory'] + r'\bin'
-        self.log.debug(f'Updated working directory {self.ctx["processors"][__class__.__name__]["workingDirectory"]}')
+        self.cwd = os.path.join(self.cwd, r'\bin')
+        self.log.debug(f'Updated working directory {self.cwd}')
 
     
     def _after_run(self):
