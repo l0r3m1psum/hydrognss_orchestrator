@@ -124,18 +124,18 @@ class L1_A(Processor):
         with open(os.path.join(self.ctx['processors'][__class__.__name__]['workingDirectory'], 'conf', 'AbsoluteFilePath.txt')) as f:
             l1a_output_path = f.readlines().pop()
         self.log.debug(f'L1A generated output: {l1a_output_path}')
-        l1a_data_path = os.path.join(l1a_output_path, DATA_RELEASE)
-        self.log.debug(f'L1A generated data: {l1a_data_path}')
-        L1A_L1b_dataRoot =  os.path.join(self.ctx['dataRoot'], L1A_L1B)
-        self.log.debug(f'Copying L1A data from {l1a_data_path} to {L1A_L1b_dataRoot}')
-        shutil.copytree(l1a_data_path, L1A_L1b_dataRoot)
-        for f in os.listdir(l1a_data_path):
+        l1a_data_path_src = os.path.join(l1a_output_path, L1A_L1B)
+        self.log.debug(f'L1A generated data: {l1a_data_path_src}')
+        l1a_data_path_dst =  os.path.join(self.ctx['dataRoot'], L1A_L1B)
+        self.log.debug(f'Copying L1A data from {l1a_data_path_src} to {l1a_data_path_dst}')
+        shutil.copytree(l1a_data_path_src, l1a_data_path_dst, dirs_exist_ok=True)
+        for f in os.listdir(l1a_data_path_src):
             if re.match('mat$', f):
                 pam_data_path_src = f
                 break
         if not pam_data_path_src:
-            self.log.debug(f'Files in {l1a_data_path}: {os.listdir(l1a_data_path)}')
-            raise Exception(f'No PAM mat file found in {l1a_data_path}')
+            self.log.debug(f'Files in {l1a_data_path_src}: {os.listdir(l1a_data_path_src)}')
+            raise Exception(f'No PAM mat file found in {l1a_data_path_src}')
         pam_data_path_dst = os.path.join(self.ctx['backupRoot'], 'PAM', f'{self.ctx["backupPrefix"]}{self.ctx["timestamp"]}.mat')
         self.log.debug(f'Copying PAM data from {pam_data_path_src} to {pam_data_path_dst}')
         shutil.copy(pam_data_path_src, pam_data_path_dst)
