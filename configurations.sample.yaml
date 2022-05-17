@@ -1,9 +1,9 @@
-start: L1_B # possible values are listed in 'processors' fields (keys)
-end: L2_FB # possible values are listed in 'processors' fields (keys); ending processor cannot be before the one in 'start' field  (following the order of the list 'processors')
+start: L1_A # possible values are listed in 'processors' fields (keys)
+end: L1_A # possible values are listed in 'processors' fields (keys); ending processor cannot be before the one in 'start' field  (following the order of the list 'processors')
 logLevel: DEBUG # for logging purposes
 dataRoot: 'C:\Users\HydroGNSS\Desktop\PDGS_NAS_folder' # absolute path to PDGS_NAS_folder
-backupRoot: 'C:\Users\HydroGNSS\Desktop\DataRelease_backups'
-backupFile: 
+backupRoot: 'C:\Users\HydroGNSS\Desktop\DataRelease_backups' # absolute path to backup folder
+backupFile: # relative path to backup file which has to be loaded
 dryMode: false
 processors: #available processors
   L1_A: 
