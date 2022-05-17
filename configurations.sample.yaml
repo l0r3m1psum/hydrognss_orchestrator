@@ -8,7 +8,7 @@ dryMode: false
 processors: #available processors
   L1_A: 
     workingDirectory: 'C:\Users\HydroGNSS\Desktop\L1APP\' # absolute path to processor delivery folder
-    executable: '.\bin\STARTroutine_Simulator_GNSSR.exe' # relative path to processor executable
+    executable: '.\bin\HSAVERS.exe' # relative path to processor executable
   L1_B:
     workingDirectory: 'C:\Users\HydroGNSS\Desktop\L1BPP\'
     script: '.\scripts\Run_L1b_Processor_with_dates.py'
