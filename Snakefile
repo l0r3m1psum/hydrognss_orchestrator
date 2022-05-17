@@ -98,6 +98,6 @@ rule TARGET:
         ctx = read_from_yaml(input[0])
         shutil.rmtree('context')
         if not config['dryMode']:
-            archive_name = os.path.join(config['backupRoot'], f'{config['backupPrefix']}{ctx["timestamp"]}')
+            archive_name = os.path.join(config['backupRoot'], f'{config["backupPrefix"]}{ctx["timestamp"]}')
             folder_to_backup =  os.path.join(config['dataRoot'], 'DataRelease')
             shutil.make_archive(archive_name, 'zip', folder_to_backup)
