@@ -1,27 +1,27 @@
-from msilib.schema import Error
 from utils import write_to_yaml, get_timestamp, get_data_time_boudaries_from
 import subprocess
 from abc import ABC
 import logging
 import os
+import shutil
+import re
 
 DATA_RELEASE = 'DataRelease'
 L1A_L1B = DATA_RELEASE + '\L1A_L1B'
 
-run_timestamp = get_timestamp()
-
-
 class Processor(ABC):
 
-    def __init__(self, context, output, log_file=f'log_{run_timestamp}.log') -> None:
+    def __init__(self, context, output) -> None:
         self.ctx = context
+        if 'timestamp' not in self.ctx:
+            self.ctx['timestamp'] = get_timestamp()
         self.out = output
         self.command = []
         self.completed_process = None
         # init logging
         self.log = logging.getLogger(self.__class__.__name__)
         self.log.setLevel(context['logLevel'])
-        fh = logging.FileHandler(log_file)
+        fh = logging.FileHandler(f'{self.ctx["timestamp"]}.log')
         fh.setFormatter(logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
         self.log.addHandler(fh)
@@ -80,6 +80,7 @@ class Processor(ABC):
             self.log.debug(
                 f'Execution Output\n---stdout---\n{cp.stdout}\n---stderr---\n{cp.stderr}')
             self.log.debug(f'Execution Context\n{str(self.ctx)}')
+            self.completed_process = cp
 
     def _after_run(self):
         self.log.debug('Not implemented...')
@@ -111,9 +112,28 @@ class L1_A(Processor):
         super().__init__(context, output)
 
     def _after_run(self):
-        # copia i prodotti generati dal processore nella storage directory
-        # aggiorna il context
-        pass
+        # out_lines = self.completed_process.stdout.splitlines()
+        # out_lines = list(filter(None, out_lines))
+        # l1a_tmp_dir_path = out_lines[len(out_lines) - 1]
+        with open(os.path.join(self.ctx['processor'][__class__.__name__]['workingDirectory'], 'config', 'AbsoluteFilePath.txt')) as f:
+            l1a_output_path = f.readlines().pop()
+        self.log.debug(f'L1A generated output: {l1a_output_path}')
+        l1a_data_path = os.path.join(l1a_output_path, DATA_RELEASE)
+        self.log.debug(f'L1A generated data: {l1a_data_path}')
+        L1A_L1b_dataRoot =  os.path.join(self.ctx['dataRoot'], L1A_L1B)
+        self.log.debug(f'Copying L1A data from {l1a_data_path} to {L1A_L1b_dataRoot}')
+        shutil.copytree(l1a_data_path, L1A_L1b_dataRoot)
+        for f in os.listdir(l1a_data_path):
+            if re.match('mat$', f):
+                pam_data_path_src = f
+                break
+        if not pam_data_path_src:
+            self.log.debug(f'Files in {l1a_data_path}: {os.listdir(l1a_data_path)}')
+            raise Exception(f'No PAM mat file found in {l1a_data_path}')
+        pam_data_path_dst = os.path.join(self.ctx['backupRoot'], 'PAM', f'{self.ctx["backupPrefix"]}{self.ctx["timestamp"]}.mat')
+        self.log.debug(f'Copying PAM data from {pam_data_path_src} to {pam_data_path_dst}')
+        shutil.copy(pam_data_path_src, pam_data_path_dst)
+        self.log.debug('Done.')
 
 
 class L1_B(Processor):

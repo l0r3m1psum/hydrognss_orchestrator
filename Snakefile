@@ -1,4 +1,4 @@
-from utils import read_from_yaml, get_timestamp, write_to_yaml
+from utils import read_from_yaml, write_to_yaml
 from processors import *
 import shutil
 import zipfile
@@ -95,8 +95,9 @@ rule L2_SI:
 rule TARGET:
     input: getattr(rules, config['end']).output
     run:
+        ctx = read_from_yaml(input[0])
         shutil.rmtree('context')
         if not config['dryMode']:
-            archive_name = os.path.join(config['backupRoot'], f'run_{get_timestamp()}')
+            archive_name = os.path.join(config['backupRoot'], f'{config['backupPrefix']}{ctx["timestamp"]}')
             folder_to_backup =  os.path.join(config['dataRoot'], 'DataRelease')
             shutil.make_archive(archive_name, 'zip', folder_to_backup)
