@@ -25,7 +25,7 @@ rule LOAD:
         ctx = read_from_yaml(input[0])
         # unpack backup file into data root
         if (ctx['backupRoot'] and ctx['backupFile'] and not ctx['dryMode']):
-            backup_zip = os.path.join(ctx['backupRoot'], f'{ctx['backupFile']}.zip')
+            backup_zip = os.path.join(ctx['backupRoot'], f'{ctx["backupFile"]}.zip')
             with zipfile.ZipFile(backup_zip, 'r') as zip_ref:
                 zip_ref.extractall(os.path.join(ctx['dataRoot'], 'DataRelease'))
         write_to_yaml('context/load.yaml', ctx)
