@@ -4,7 +4,6 @@ logLevel: DEBUG
 dataRoot: 'C:\Users\HydroGNSS\Desktop\PDGS_NAS_folder'
 backupRoot: 'C:\Users\HydroGNSS\Desktop\DataRelease_backups'
 backupFile:
-backupPrefix: ''
 dryMode: false
 processors:
   L1_A: 

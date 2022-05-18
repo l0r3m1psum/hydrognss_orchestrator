@@ -83,7 +83,7 @@ rule TARGET:
     run:
         ctx = read_from_yaml(input[0])
         if not config['dryMode']:
-            archive_name = os.path.join(ctx['backupRoot'], f'{ctx["backupPrefix"]}_{ctx["timestamp"]}')
+            archive_name = os.path.join(ctx['backupRoot'], f'{ctx["backupFile"]}_{ctx["timestamp"]}')
             folder_to_backup =  os.path.join(ctx['dataRoot'], 'DataRelease')
             shutil.make_archive(archive_name, 'zip', folder_to_backup)
             shutil.rmtree('context')

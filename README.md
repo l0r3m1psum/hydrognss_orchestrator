@@ -22,7 +22,7 @@
 - `logLevel`: only for debugging purposes
 - `dataRoot`: absolute path to data/storage folder ( e.g. PDGS_NAS_folder ) folder; internal folder structure must mimic ICD structure
 - `backupRoot`: absolute path to a backup folder; this is used for storing runs backups and PAM related files. In this folder must exist a folder named "PAM" in order to work properly
-- `backupFile`: relative path to a backup file generated in a previous run; if present, the orchestrator will load data from this backup before starting the workflow
+- `backupFile`: relative path to a backup file generated in a previous run; if present, the orchestrator will load data from this backup before starting the workflow; do not add '.zip' (file extension) at the end
 - `backupPrefix`: textual fragment which will be prepended to backup file names
 - `dryMode`: only for debugging purposes; will be removed in future releases
 - `workingDirectory`: absolute path to processor delivery folder; internal folder structure must mimic ICD structure 

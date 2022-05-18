@@ -124,7 +124,7 @@ class L1_A(Processor):
         with open(os.path.join(self.ctx['processors'][__class__.__name__]['workingDirectory'], 'conf', 'AbsoluteFilePath.txt')) as f:
             l1a_output_path = f.readlines().pop()
         
-        self.ctx['backupPrefix'] = list(filter(None, l1a_output_path.split("\\"))).pop()
+        self.ctx['backupFile'] = list(filter(None, l1a_output_path.split("\\"))).pop()
 
         self.log.debug(f'L1A generated output: {l1a_output_path}')
         l1a_data_path_src = os.path.join(l1a_output_path, L1A_L1B)
@@ -141,7 +141,7 @@ class L1_A(Processor):
         if not pam_data_path_src:
             self.log.debug(f'Files in {l1a_data_path_src}: {os.listdir(l1a_data_path_src)}')
             raise Exception(f'No PAM mat file found in {pam_data_path_src}')
-        pam_data_path_dst = os.path.join(self.ctx['backupRoot'], 'PAM', f'{self.ctx["backupPrefix"]}_{self.ctx["timestamp"]}.mat')
+        pam_data_path_dst = os.path.join(self.ctx['backupRoot'], 'PAM', f'{self.ctx["backupFile"]}.mat')
         self.log.debug(f'Copying PAM data from {pam_data_path_src} to {pam_data_path_dst}')
         shutil.copy(pam_data_path_src, pam_data_path_dst)
         self.log.debug('Done.')
