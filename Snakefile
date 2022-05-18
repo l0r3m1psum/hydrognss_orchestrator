@@ -83,7 +83,7 @@ rule TARGET:
     run:
         ctx = read_from_yaml(input[0])
         if not config['dryMode']:
-            if ctx['start'] != 'L1_A'
+            if ctx['start'] != 'L1_A':
                 backupFile_no_timestamp = ctx['backupFile'].split('_')
                 del backupFile_no_timestamp[-1]
                 ctx['backupFile'] = "_".join(backupFile_no_timestamp)
