@@ -2,7 +2,9 @@
 
 ## Prerequisites
 
-To make this software working properly, every requisite from each processor involved in the orchestration must be fulfilled prior to execution.
+- Every processor prerequisites must be fulfilled prior to execution
+- Every processor specific configuration must be done prior to exectuion
+- Other requirements are scpecified in the ICD 
 
 ## Installation
 
