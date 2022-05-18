@@ -1,15 +1,15 @@
-start: L1_A # possible values are listed in 'processors' fields (keys)
-end: L1_A # possible values are listed in 'processors' fields (keys); ending processor cannot be before the one in 'start' field  (following the order of the list 'processors')
-logLevel: DEBUG # for logging purposes
-dataRoot: 'C:\Users\HydroGNSS\Desktop\PDGS_NAS_folder' # absolute path to PDGS_NAS_folder
-backupRoot: 'C:\Users\HydroGNSS\Desktop\DataRelease_backups' # absolute path to backup folder
-backupFile: # relative path to backup file which has to be loaded
+start: L1_A
+end: L1_A
+logLevel: DEBUG
+dataRoot: 'C:\Users\HydroGNSS\Desktop\PDGS_NAS_folder'
+backupRoot: 'C:\Users\HydroGNSS\Desktop\DataRelease_backups'
+backupFile:
 backupPrefix: ''
 dryMode: false
-processors: #available processors
+processors:
   L1_A: 
-    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L1APP\' # absolute path to processor delivery folder
-    executable: '.\bin\HSAVERS.exe' # relative path to processor executable
+    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L1APP\'
+    executable: '.\bin\HSAVERS.exe'
   L1_B:
     workingDirectory: 'C:\Users\HydroGNSS\Desktop\L1BPP\'
     script: '.\scripts\Run_L1b_Processor_with_dates.py'
