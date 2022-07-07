@@ -18,9 +18,6 @@ processors:
   L2_SM:
     workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PPSSM\'
     executable: '.\bin\SML2PP_start.exe'
-    resolution: '25'
-    signal: 'L1'
-    polarization: 'L'
   L2_FT:
     workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PPFT\'
     executable: '.\bin\L2PPFT.exe'
