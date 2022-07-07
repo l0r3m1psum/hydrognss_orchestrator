@@ -5,6 +5,7 @@ import logging
 import os
 import shutil
 import re
+from itertools import chain
 
 DATA_RELEASE = 'DataRelease'
 L1A_L1B = DATA_RELEASE + '\L1A_L1B'
@@ -18,7 +19,7 @@ class Processor(ABC):
         self.out = output
         self.cwd = self.ctx['processors'][self.__class__.__name__]['workingDirectory']
         self.command = []
-        self.completed_process = None
+        # self.completed_process = None
         # init logging
         self.log = logging.getLogger(self.__class__.__name__)
         self.log.setLevel(context['logLevel'])
@@ -61,27 +62,32 @@ class Processor(ABC):
 
     def _run(self):
         settings = {
-            'check': True,
-            'capture_output': True,
-            'text': True,
             'cwd': self.cwd,
+            'text': True,
+            'stdout': subprocess.PIPE,
+            'stderr': subprocess.PIPE,
+            'universal_newlines': True
         }
         self.log.debug(f'Process settings\n{str(settings)}')
         self.log.info(f'Starting processor execution')
         try:
-            cp: subprocess.CompletedProcess = subprocess.run(
-                self.command, **settings)
+            popen = subprocess.Popen(self.command, **settings)
+            self.log.debug(f'Execution Output\n')
+            for line in chain(iter(popen.stdout.readline, ""), iter(popen.stderr.readline, "")):
+                self.log.debug(line)
+                print(line) 
+            popen.stdout.close()
+            popen.stderr.close()
+            return_code = popen.wait()
+            if return_code:
+                raise subprocess.CalledProcessError(return_code, self.command)
         except subprocess.CalledProcessError as e:
             self.log.error("Processor error", exc_info=True)
-            self.log.error(
-                f"Execution Output\n---stdout---\n{e.stdout}\n---stderr---\n{e.stderr}")
             raise e
         else:
             self.log.info('Processor execution ended.')
-            self.log.debug(
-                f'Execution Output\n---stdout---\n{cp.stdout}\n---stderr---\n{cp.stderr}')
             self.log.debug(f'Execution Context\n{str(self.ctx)}')
-            self.completed_process = cp
+            # self.completed_process = cp
 
     def _after_run(self):
         self.log.debug('Not implemented...')
@@ -207,7 +213,12 @@ class L2_FB(Processor):
 class L2_FT(Processor):
     def __init__(self, context, output) -> None:
         super().__init__(context, output)
-
+    
+    def _build_args(self):
+        time_frame = get_data_time_boudaries_from(
+            os.path.join(self.ctx['dataRoot'], L1A_L1B))
+        self.log.debug(f'Built args string: {" ".join(time_frame)}')
+        self.ctx['processors'][self.__class__.__name__]['args'] = time_frame
 
 class L2_SI(Processor):
     argsTemplate = '-P {DataRelease_folder}'
