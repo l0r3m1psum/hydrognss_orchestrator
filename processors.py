@@ -147,7 +147,7 @@ class L1_A(Processor):
             self.log.debug(f'Files in {l1a_data_path_src}: {os.listdir(l1a_data_path_src)}')
             raise Exception(f'No PAM mat file found in {pam_data_path_src}')
         pam_data_path_dst = os.path.join(self.ctx['backupRoot'], 'PAM', f'{self.ctx["backupFile"]}.mat')
-        self.ctx['referenceFromL1A'] = pam_data_path_dst
+        self.ctx['referenceFromL1A'] = pam_data_path_src
         self.log.debug(f'Copying PAM data from {pam_data_path_src} to {pam_data_path_dst}')
         shutil.copy(pam_data_path_src, pam_data_path_dst)
         self.log.debug('Done.')
