@@ -147,6 +147,7 @@ class L1_A(Processor):
             self.log.debug(f'Files in {l1a_data_path_src}: {os.listdir(l1a_data_path_src)}')
             raise Exception(f'No PAM mat file found in {pam_data_path_src}')
         pam_data_path_dst = os.path.join(self.ctx['backupRoot'], 'PAM', f'{self.ctx["backupFile"]}.mat')
+        self.ctx['referenceFromL1A'] = pam_data_path_dst
         self.log.debug(f'Copying PAM data from {pam_data_path_src} to {pam_data_path_dst}')
         shutil.copy(pam_data_path_src, pam_data_path_dst)
         self.log.debug('Done.')
@@ -171,13 +172,18 @@ class L2_SM(Processor):
         super().__init__(context, output)
 
     def _before_run(self):
+        refFileName = "_".join(self.ctx['backupFile'].split("_")[:-1]) + '.mat'
+        refFilePathSrc = self.ctx['referenceFromL1A'] if self.ctx.get('referenceFromL1A', False) else os.path.join(self.ctx['backupRoot'], 'PAM' , refFileName)
+        refFilePathDst = os.path.join(self.cwd, 'resources', 'OutReference.mat')
+        self.log.debug(f"Copying reference file from {refFilePathSrc} to {refFilePathDst}")
+        shutil.copy(refFilePathSrc, refFilePathDst)
+
+
         self.cwd = os.path.join(self.cwd, 'bin')
         self.log.debug(f'Updated working directory {self.cwd}')
 
-        refFilePathSrc = os.path.join(self.ctx['backupRoot'], )
-        refFilePathDst = ''
 
-        self.log(f'Copying reference file from {refFilePathSrc} to {refFilePathDst}')
+
 
     def _build_args(self):
         args = self.argsTemplate
