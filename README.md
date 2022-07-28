@@ -6,7 +6,7 @@
 - A backup root folder must be created (e.g. `C:\data_backups`);  this is used for storing orchestrator's run backups and PAM related files. This folder must contain a `PAM` fodler (e.g. `C:\data_backups\PAM`)
 - Each processor must be installed properly ( following processor's release notes / instructions / readme files )
 - Each processor must be configured properly
-- It is suggested to teast each processor before use in the orchestration
+- It is suggested to test each processor before use in the orchestration
 
 ## Installation
 
@@ -30,37 +30,7 @@
 - `executable` or `script`: relative path to processor executable or python script
 
 ### Example
-```yaml
-start: L1_A 
-end: L2_FB
-logLevel: DEBUG
-dataRoot: 'C:\Users\HydroGNSS\Desktop\PDGS_NAS_folder' 
-backupRoot: 'C:\Users\HydroGNSS\Desktop\DataRelease_backups' 
-backupFile: 
-dryMode: false
-processors:
-  L1_A: 
-    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L1APP\' 
-    executable: '.\bin\HSAVERS.exe' 
-  L1_B:
-    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L1BPP\'
-    script: '.\scripts\Run_L1b_Processor_with_dates.py'
-  L2_FB: 
-    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PPFB\'
-    executable: '.\bin\L2PP_FB.exe'
-  L2_SM:
-    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PPSSM\'
-    executable: '.\bin\SML2PP_start.exe'
-    resolution: '25'
-    signal: 'L1'
-    polarization: 'L'
-  L2_FT:
-    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PPFT\'
-    executable: '.\bin\L2PPFT.exe'
-  L2_SI:
-    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PPSI\'
-    script: '.\scripts\Run_PSR.py'
-```
+Check `configurations.sample.yaml` to have an example of a working configuration.
 
 ## Usage 
 ### Startup

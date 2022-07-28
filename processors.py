@@ -87,7 +87,6 @@ class Processor(ABC):
         else:
             self.log.info('Processor execution ended.')
             self.log.debug(f'Execution Context\n{str(self.ctx)}')
-            # self.completed_process = cp
 
     def _after_run(self):
         self.log.debug('Not implemented...')
@@ -165,30 +164,36 @@ class L1_B(Processor):
 
 
 class L2_SM(Processor):
-    argsTemplate = '-input {dataRoot}\DataRelease\L1A_L1B {dataRoot}\DataRelease\L2OP-SSM {dataRoot}\Auxiliary_Data {startYear} {startMonth} {startDay} {numberOfDays} {resolution} {signal} {polarization}'
+    # -input “G:/Mydrive/SM-L2PP” 2021-12-18 2021-12-21 1 25 L1 L
+    argsTemplate = '-input {dataRoot} {startDate} {endDate} {timeRes} {horRes} {sig} {pol}'
 
     def __init__(self, context, output) -> None:
         super().__init__(context, output)
 
+    def _before_run(self):
+        self.cwd = os.path.join(self.cwd, 'bin')
+        self.log.debug(f'Updated working directory {self.cwd}')
+
+        refFilePathSrc = os.path.join(self.ctx['backupRoot'], )
+        refFilePathDst = ''
+
+        self.log(f'Copying reference file from {refFilePathSrc} to {refFilePathDst}')
+
     def _build_args(self):
+        args = self.argsTemplate
         time_frame = get_data_time_boudaries_from(
             os.path.join(self.ctx['dataRoot'], L1A_L1B))
-        # substitutions
-        args = self.argsTemplate
+
         args = args.replace('{dataRoot}', self.ctx['dataRoot'])
-        args = args.replace('{startYear}', time_frame[0].split('-')[0])
-        args = args.replace('{startMonth}', time_frame[0].split('-')[1])
-        args = args.replace('{startDay}', time_frame[0].split('-')[2])
-        args = args.replace('{numberOfDays}', '')
-        args = args.replace(
-            '{resolution}', self.ctx['processors'][self.__class__.__name__]['resolution'])
-        args = args.replace(
-            '{signal}', self.ctx['processors'][self.__class__.__name__]['signal'])
-        args = args.replace(
-            '{polarization}', self.ctx['processors'][self.__class__.__name__]['polarization'])
+        args = args.replace('{startDate}', time_frame[0])
+        args = args.replace('{endDate}', time_frame[1])
+        args = args.replace('{timeRes}', self.ctx['processors'][self.__class__.__name__]['productTimeResolution'])
+        args = args.replace('{horRes}', self.ctx['processors'][self.__class__.__name__]['horizontalResolution'])
+        args = args.replace('{sig}', self.ctx['processors'][self.__class__.__name__]['signal'])
+        args = args.replace('{pol}', self.ctx['processors'][self.__class__.__name__]['polarization'])
         self.log.debug(f'Built args string: {args}')
-        self.ctx['processors'][self.__class__.__name__]['args'] = args.split(
-            ' ')
+
+        self.ctx['processors'][self.__class__.__name__]['args'] = args.split(" ")
 
 
 class L2_FB(Processor):
@@ -200,25 +205,33 @@ class L2_FB(Processor):
     def _build_args(self):
         time_frame = get_data_time_boudaries_from(
             os.path.join(self.ctx['dataRoot'], L1A_L1B))
-        # substitutions
+
         args = self.argsTemplate
         args = args.replace('{startDate}', time_frame[0])
         args = args.replace('{endDate}', time_frame[1])
         args = args.replace('{dataRoot}', self.ctx['dataRoot'])
         self.log.debug(f'Built args string: {args}')
+
         self.ctx['processors'][self.__class__.__name__]['args'] = args.split(
             ' ')
 
 
 class L2_FT(Processor):
+    argsTemplate = '{startDate} {endDate}'
+
     def __init__(self, context, output) -> None:
         super().__init__(context, output)
     
     def _build_args(self):
         time_frame = get_data_time_boudaries_from(
             os.path.join(self.ctx['dataRoot'], L1A_L1B))
-        self.log.debug(f'Built args string: {" ".join(time_frame)}')
-        self.ctx['processors'][self.__class__.__name__]['args'] = time_frame
+
+        args = self.argsTemplate
+        args = args.replace('{startDate}', time_frame[0])
+        args = args.replace('{endDate}', time_frame[1])
+        self.log.debug(f'Built args string: {args}')
+
+        self.ctx['processors'][self.__class__.__name__]['args'] = args.split(' ')
 
 class L2_SI(Processor):
     argsTemplate = '-P {DataRelease_folder}'
@@ -229,6 +242,7 @@ class L2_SI(Processor):
         args = self.argsTemplate
         args = args.replace('{DataRelease_folder}',os.path.join(self.ctx['dataRoot'],DATA_RELEASE))
         self.log.debug(f'Built args string: {args}')
+
         self.ctx['processors'][self.__class__.__name__]['args'] = args.split(
             ' ')
 
