@@ -203,7 +203,7 @@ class L2_SM(Processor):
 
 
 class L2_FB(Processor):
-    argsTemplate = '{startDate} {endDate} {dataRoot}'
+    argsTemplate = '{startDate} {endDate} {dataRoot} yes'
 
     def __init__(self, context, output) -> None:
         super().__init__(context, output)
