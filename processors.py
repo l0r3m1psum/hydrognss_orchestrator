@@ -35,20 +35,20 @@ class Processor(ABC):
     def _build_command(self):
         if 'executable' in self.ctx['processors'][self.__class__.__name__]:
             self.log.debug('Found executable in config')
-            command = [os.path.join(
-                os.path.normpath(self.ctx['processors'][self.__class__.__name__]['workingDirectory']),
-                os.path.normpath(self.ctx['processors'][self.__class__.__name__]['executable'])
-            )]
+            type = 'executable'
         elif 'script' in self.ctx['processors'][self.__class__.__name__]:
             self.log.debug('Found script in config')
-            command = ['python', os.path.join(
-                os.path.normpath(self.ctx['processors'][self.__class__.__name__]['workingDirectory']),
-                os.path.normpath(self.ctx['processors'][self.__class__.__name__]['script'])
-            )]
+            type = 'script'
         else:
             self.log.error(
                 'Malformed config yaml: missing script or executable relative path')
             raise Exception('Malformed configuration yaml')
+        
+        command = [os.path.join(
+                os.path.normpath(self.ctx['processors'][self.__class__.__name__]['workingDirectory']),
+                os.path.normpath(self.ctx['processors'][self.__class__.__name__][type])
+            )]
+        
         if 'args' in self.ctx['processors'][self.__class__.__name__]:
             command = [*command, *self.ctx['processors']
                        [self.__class__.__name__]['args']]
