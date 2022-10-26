@@ -19,6 +19,7 @@ class Processor(ABC):
         self.out = output
         self.cwd = self.ctx['processors'][self.__class__.__name__]['workingDirectory']
         self.command = []
+        self.env = os.environ.copy()
         # self.completed_process = None
         # init logging
         self.log = logging.getLogger(self.__class__.__name__)
@@ -68,7 +69,8 @@ class Processor(ABC):
             'text': True,
             'stdout': subprocess.PIPE,
             'stderr': subprocess.PIPE,
-            'universal_newlines': True
+            'universal_newlines': True,
+            'env': self.env
         }
         self.log.debug(f'Process settings\n{str(settings)}')
         self.log.info(f'Starting processor execution')
@@ -158,6 +160,11 @@ class L1_A(Processor):
 class L1_B(Processor):
     def __init__(self, context, output) -> None:
         super().__init__(context, output)
+
+    def _before_run(self):
+        envPaths = self.env['PATH'].split(';')
+        newPaths = [e for e in envPaths if 'QGIS' not in e]
+        self.env['PATH'] = ";".join(newPaths)
 
     def _build_args(self):
         time_frame = get_data_time_boudaries_from(
