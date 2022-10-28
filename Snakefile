@@ -100,5 +100,5 @@ rule PAM:
         p.start()
 
 rule RUN:
-    input: rules.PAM.output if config['PAM'] == 'True' else rules.BACKUP.output
+    input: rules.PAM.output if config['PAM'] else rules.BACKUP.output
 

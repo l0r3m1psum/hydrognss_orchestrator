@@ -21,6 +21,7 @@
 
 - `start`: identify the workflow starting processor; possible values are listed in 'processors' fields (keys)
 - `end`: identify the workflow ending processor; possible values are listed in 'processors' fields (keys); this ending processor cannot sit before the one in 'start' field  (following the order of the list in 'processors' field)
+- `PAM` : set to `True` if it is required to run the PAM process in the end or `False` otherwise
 - `logLevel`: only for debugging purposes
 - `dataRoot`: absolute path to storage folder ( e.g. `C:\PDGS_NAS_folder` )
 - `backupRoot`: absolute path to backup folder (e.g. `C:\data_backups`)
