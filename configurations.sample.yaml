@@ -1,30 +1,30 @@
 start: L1_A
 end: L1_A
+PAM: True
 logLevel: DEBUG
 dataRoot: 'C:\Users\HydroGNSS\Desktop\PDGS_NAS_folder'
 backupRoot: 'C:\Users\HydroGNSS\Desktop\DataRelease_backups'
 backupFile:
-dryMode: false
 processors:
   L1_A: 
-    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L1APP\'
+    workingDirectory: 'C:\L1A\'
     executable: '.\bin\HSAVERS.exe'
   L1_B:
-    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L1BPP\'
+    workingDirectory: 'C:\L1B\'
     script: '.\scripts\Run_L1b_Processor_with_dates.py'
   L2_FB: 
-    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PPFB\'
-    executable: '.\bin\L2PP_FB.exe'
+    workingDirectory: 'C:\L2FB\'
+    executable: '.\bin\L2PP_FB_v04.exe'
   L2_SM:
-    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PPSSM\'
+    workingDirectory: 'C:\L2SM\'
     executable: '.\bin\SML2PP_start.exe'
-    productTimeResolution: '1'
-    horizontalResolution: '25'
-    signal: 'L1'
-    polarization: 'L'
   L2_FT:
-    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PPFT\'
-    executable: '.\bin\L2PPFT.exe'
+    workingDirectory: 'C:\L2FT\'
+    executable: '.\bin\L2PPFT_mainscript.exe'
   L2_SI:
-    workingDirectory: 'C:\Users\HydroGNSS\Desktop\L2PPSI\'
+    workingDirectory: 'C:\L2SI\'
     script: '.\scripts\Run_PSR.py'
+  PAM:
+    workingDirectory: 'C:\PAM\'
+    script: '.\bin\PAM_start.exe'
+  

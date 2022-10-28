@@ -10,12 +10,11 @@ DATA_RELEASE_STRUCT = ['L1A_L1B','L2OP-FB','L2OP-FT','L2OP-SI','L2OP-SM','L1A-SW
 rule CLEANUP:
     output: 'context/cleanup.yaml'
     run:
-        if not config['dryMode']:
-            dataFolder =  os.path.join(config['dataRoot'], 'DataRelease')
-            shutil.rmtree(dataFolder)
-            os.makedirs(dataFolder)
-            for directory in DATA_RELEASE_STRUCT:
-                os.makedirs(os.path.join(dataFolder, directory), exist_ok=True)
+        dataFolder =  os.path.join(config['dataRoot'], 'DataRelease')
+        shutil.rmtree(dataFolder)
+        os.makedirs(dataFolder)
+        for directory in DATA_RELEASE_STRUCT:
+            os.makedirs(os.path.join(dataFolder, directory), exist_ok=True)
         write_to_yaml('context/cleanup.yaml', config)
 
 rule LOAD:
@@ -23,8 +22,7 @@ rule LOAD:
     output: 'context/load.yaml'
     run:
         ctx = read_from_yaml(input[0])
-        # unpack backup file into data root
-        if (ctx['backupRoot'] and ctx['backupFile'] and not ctx['dryMode']):
+        if (ctx['backupRoot'] and ctx['backupFile']):
             backup_zip = os.path.join(ctx['backupRoot'], f'{ctx["backupFile"]}.zip')
             with zipfile.ZipFile(backup_zip, 'r') as zip_ref:
                 zip_ref.extractall(os.path.join(ctx['dataRoot'], 'DataRelease'))
@@ -78,17 +76,29 @@ rule L2_SI:
         p = L2_SI(ctx, output[0])
         p.start()
 
-rule TARGET:
+rule BACKUP:
     input: getattr(rules, config['end']).output
+    output: 'context/backup.yaml'
     run:
         ctx = read_from_yaml(input[0])
-        if not config['dryMode']:
-            if ctx['start'] != 'L1_A':
-                backupFile_no_timestamp = ctx['backupFile'].split('_')
-                del backupFile_no_timestamp[-1]
-                ctx['backupFile'] = "_".join(backupFile_no_timestamp)
-            archive_name = os.path.join(ctx['backupRoot'], f'{ctx["backupFile"]}_{ctx["timestamp"]}')
-            folder_to_backup =  os.path.join(ctx['dataRoot'], 'DataRelease')
-            shutil.make_archive(archive_name, 'zip', folder_to_backup)
-            shutil.rmtree('context')
+        if ctx['start'] != 'L1_A':
+            backupFile_no_timestamp = ctx['backupFile'].split('_')
+            del backupFile_no_timestamp[-1]
+            ctx['backupFile'] = "_".join(backupFile_no_timestamp)
+        archive_name = os.path.join(ctx['backupRoot'], f'{ctx["backupFile"]}_{ctx["timestamp"]}')
+        folder_to_backup =  os.path.join(ctx['dataRoot'], 'DataRelease')
+        shutil.make_archive(archive_name, 'zip', folder_to_backup)
+        ctx['backup_archive'] = archive_name
+        write_to_yaml('context/backup.yaml', ctx)
+
+rule PAM:
+    input: rules.BACKUP.output
+    output: 'context/pam.yaml'
+    run:
+        ctx = read_from_yaml(input[0])
+        p = PAM(ctx, output[0])
+        p.start()
+
+rule RUN:
+    input: rules.PAM.output if config['PAM'] == 'True' else rules.BACKUP.output
 
