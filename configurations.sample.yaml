@@ -26,5 +26,5 @@ processors:
     script: '.\scripts\Run_PSR.py'
   PAM:
     workingDirectory: 'C:\PAM\'
-    script: '.\bin\PAM_start.exe'
+    executable: '.\bin\PAM_start.exe'
   

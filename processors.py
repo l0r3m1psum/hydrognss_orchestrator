@@ -262,7 +262,7 @@ class L2_SI(Processor):
 
 class PAM(Processor):
     # argsTemplate = '"L2_SM" "C:\PDGS_NAS_Folder\Auxiliary_Data" "C:\E2ES_backups" "Gabon_global_07-Oct-2022_12_31_56_1666865991"'
-    argsTemplate = '{processor} {data_root}\Auxiliary_Data" {backup_root} {backup_file}'
+    argsTemplate = '{processor} {data_root}\Auxiliary_Data {backup_root} {backup_file}'
     def __init__(self, context, output) -> None:
         super().__init__(context, output)
 
