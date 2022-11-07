@@ -277,7 +277,7 @@ class OrchestratorWindow(qtw.QMainWindow):
             ext = '*.py' if is_script.isChecked() else '*.exe'
             fileName, _ = qtw.QFileDialog.getOpenFileName(self, f'Select {processor} Executable', qtc.QDir.rootPath() , ext)
             wd_in.setText(path.dirname(fileName))
-            exe_in.setText(path.relpath(fileName, start = path.dirname(fileName)))
+            exe_in.setText(path.join('.',path.relpath(fileName, start = path.dirname(fileName))))
         except:
             pass
 

@@ -217,7 +217,11 @@
                 </widget>
                </item>
                <item>
-                <widget class="QLineEdit" name="in_bkpRoot"/>
+                <widget class="QLineEdit" name="in_bkpRoot">
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                </widget>
                </item>
                <item>
                 <widget class="QPushButton" name="btn_browse_bkpRoot">
@@ -286,7 +290,7 @@
           <item>
            <widget class="QPushButton" name="btn_save">
             <property name="text">
-             <string>Save</string>
+             <string>Save and Close</string>
             </property>
            </widget>
           </item>
