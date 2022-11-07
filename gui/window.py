@@ -154,49 +154,49 @@ class OrchestratorWindow(qtw.QMainWindow):
 
         # processors
         data = { 'workingDirectory' : self.ui.in_l1a_wd.text() }
-        if self.ui.chk_l1a_script:
+        if self.ui.chk_l1a_script.isChecked():
             data['script'] = self.ui.in_l1a_exe.text()
         else:
             data['executable'] = self.ui.in_l1a_exe.text()
         self.configs['processors']['L1_A'] = data
         
         data = { 'workingDirectory' : self.ui.in_l1b_wd.text() }
-        if self.ui.chk_l1b_script:
+        if self.ui.chk_l1b_script.isChecked():
             data['script'] = self.ui.in_l1b_exe.text()
         else:
             data['executable'] = self.ui.in_l1b_exe.text()
         self.configs['processors']['L1_B'] = data
 
         data = { 'workingDirectory' : self.ui.in_l2sm_wd.text() }
-        if self.ui.chk_l2sm_script:
+        if self.ui.chk_l2sm_script.isChecked():
             data['script'] = self.ui.in_l2sm_exe.text()
         else:
             data['executable'] = self.ui.in_l2sm_exe.text()
         self.configs['processors']['L2_SM'] = data
 
         data = { 'workingDirectory' : self.ui.in_l2si_wd.text() }
-        if self.ui.chk_l2si_script:
+        if self.ui.chk_l2si_script.isChecked():
             data['script'] = self.ui.in_l2si_exe.text()
         else:
             data['executable'] = self.ui.in_l2si_exe.text()
         self.configs['processors']['L2_SI'] = data
 
         data = { 'workingDirectory' : self.ui.in_l2ft_wd.text() }
-        if self.ui.chk_l2ft_script:
+        if self.ui.chk_l2ft_script.isChecked():
             data['script'] = self.ui.in_l2ft_exe.text()
         else:
             data['executable'] = self.ui.in_l2ft_exe.text()
         self.configs['processors']['L2_FT'] = data
 
         data = { 'workingDirectory' : self.ui.in_l2fb_wd.text() }
-        if self.ui.chk_l2fb_script:
+        if self.ui.chk_l2fb_script.isChecked():
             data['script'] = self.ui.in_l2fb_exe.text()
         else:
             data['executable'] = self.ui.in_l2fb_exe.text()
         self.configs['processors']['L2_FB'] = data
 
         data = { 'workingDirectory' : self.ui.in_pam_wd.text() }
-        if self.ui.chk_pam_script:
+        if self.ui.chk_pam_script.isChecked():
             data['script'] = self.ui.in_pam_exe.text()
         else:
             data['executable'] = self.ui.in_pam_exe.text()
