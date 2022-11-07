@@ -341,7 +341,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "E2ES Orchestrator - Configuration Setup"))
         self.start_group.setTitle(_translate("MainWindow", "Start"))
         self.s_l1a.setText(_translate("MainWindow", "L1A"))
         self.s_l1b.setText(_translate("MainWindow", "L1B"))

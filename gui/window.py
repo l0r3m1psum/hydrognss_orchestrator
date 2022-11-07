@@ -110,103 +110,107 @@ class OrchestratorWindow(qtw.QMainWindow):
             self.ui.in_pam_exe.setText(self.configs['processors']['PAM']['executable'])
 
     def _save(self):
-        # start
-        for r in self.ui.start_group.children():
-            if isinstance(r, qtw.QRadioButton) and r.isChecked():
-                self.configs['start'] = r.property('data')
-                break
-        else:
-            raise Exception('Missing start processor')
-        
-        # end
-        for r in self.ui.end_group.children():
-            if isinstance(r, qtw.QRadioButton) and r.isChecked():
-                self.configs['end'] = r.property('data')
-                break
-        else:
-            raise Exception('Missing end processor')
-        
-        # data root
-        if self.ui.in_dataRoot.text():
-            self.configs['dataRoot'] = self.ui.in_dataRoot.text() 
-        else:
-            raise Exception('Missing data root')
-
-        # backup root
-        if self.ui.in_dataRoot.text():
-            self.configs['backupRoot'] = self.ui.in_bkpRoot.text() 
-        else:
-            raise Exception('Missing backup root')
-
-        # backup file
-        if self.ui.in_bkpFile.isEnabled():
-            if self.ui.in_bkpFile.text():
-                fileName = path.basename(self.ui.in_bkpFile.text())
-                self.configs['backupFile'] = re.sub(re.compile('\.zip$'), '', fileName) 
+        try:
+            # start
+            for r in self.ui.start_group.children():
+                if isinstance(r, qtw.QRadioButton) and r.isChecked():
+                    self.configs['start'] = r.property('data')
+                    break
             else:
-                raise Exception('Missing backup file')
-        else:
-            self.configs['backupFile'] = None
-        
+                raise Exception('Missing start processor')
+            
+            # end
+            for r in self.ui.end_group.children():
+                if isinstance(r, qtw.QRadioButton) and r.isChecked():
+                    self.configs['end'] = r.property('data')
+                    break
+            else:
+                raise Exception('Missing end processor')
+            
+            # data root
+            if self.ui.in_dataRoot.text():
+                self.configs['dataRoot'] = self.ui.in_dataRoot.text() 
+            else:
+                raise Exception('Missing data root')
 
-        # pam
-        self.configs['PAM'] = self.ui.chk_pam.isChecked()
+            # backup root
+            if self.ui.in_dataRoot.text():
+                self.configs['backupRoot'] = self.ui.in_bkpRoot.text() 
+            else:
+                raise Exception('Missing backup root')
 
-        # processors
-        data = { 'workingDirectory' : self.ui.in_l1a_wd.text() }
-        if self.ui.chk_l1a_script.isChecked():
-            data['script'] = self.ui.in_l1a_exe.text()
-        else:
-            data['executable'] = self.ui.in_l1a_exe.text()
-        self.configs['processors']['L1_A'] = data
-        
-        data = { 'workingDirectory' : self.ui.in_l1b_wd.text() }
-        if self.ui.chk_l1b_script.isChecked():
-            data['script'] = self.ui.in_l1b_exe.text()
-        else:
-            data['executable'] = self.ui.in_l1b_exe.text()
-        self.configs['processors']['L1_B'] = data
+            # backup file
+            if self.ui.in_bkpFile.isEnabled():
+                if self.ui.in_bkpFile.text():
+                    fileName = path.basename(self.ui.in_bkpFile.text())
+                    self.configs['backupFile'] = re.sub(re.compile('\.zip$'), '', fileName) 
+                else:
+                    raise Exception('Missing backup file')
+            else:
+                self.configs['backupFile'] = None
+            
 
-        data = { 'workingDirectory' : self.ui.in_l2sm_wd.text() }
-        if self.ui.chk_l2sm_script.isChecked():
-            data['script'] = self.ui.in_l2sm_exe.text()
-        else:
-            data['executable'] = self.ui.in_l2sm_exe.text()
-        self.configs['processors']['L2_SM'] = data
+            # pam
+            self.configs['PAM'] = self.ui.chk_pam.isChecked()
 
-        data = { 'workingDirectory' : self.ui.in_l2si_wd.text() }
-        if self.ui.chk_l2si_script.isChecked():
-            data['script'] = self.ui.in_l2si_exe.text()
-        else:
-            data['executable'] = self.ui.in_l2si_exe.text()
-        self.configs['processors']['L2_SI'] = data
+            # processors
+            data = { 'workingDirectory' : self.ui.in_l1a_wd.text() }
+            if self.ui.chk_l1a_script.isChecked():
+                data['script'] = self.ui.in_l1a_exe.text()
+            else:
+                data['executable'] = self.ui.in_l1a_exe.text()
+            self.configs['processors']['L1_A'] = data
+            
+            data = { 'workingDirectory' : self.ui.in_l1b_wd.text() }
+            if self.ui.chk_l1b_script.isChecked():
+                data['script'] = self.ui.in_l1b_exe.text()
+            else:
+                data['executable'] = self.ui.in_l1b_exe.text()
+            self.configs['processors']['L1_B'] = data
 
-        data = { 'workingDirectory' : self.ui.in_l2ft_wd.text() }
-        if self.ui.chk_l2ft_script.isChecked():
-            data['script'] = self.ui.in_l2ft_exe.text()
-        else:
-            data['executable'] = self.ui.in_l2ft_exe.text()
-        self.configs['processors']['L2_FT'] = data
+            data = { 'workingDirectory' : self.ui.in_l2sm_wd.text() }
+            if self.ui.chk_l2sm_script.isChecked():
+                data['script'] = self.ui.in_l2sm_exe.text()
+            else:
+                data['executable'] = self.ui.in_l2sm_exe.text()
+            self.configs['processors']['L2_SM'] = data
 
-        data = { 'workingDirectory' : self.ui.in_l2fb_wd.text() }
-        if self.ui.chk_l2fb_script.isChecked():
-            data['script'] = self.ui.in_l2fb_exe.text()
-        else:
-            data['executable'] = self.ui.in_l2fb_exe.text()
-        self.configs['processors']['L2_FB'] = data
+            data = { 'workingDirectory' : self.ui.in_l2si_wd.text() }
+            if self.ui.chk_l2si_script.isChecked():
+                data['script'] = self.ui.in_l2si_exe.text()
+            else:
+                data['executable'] = self.ui.in_l2si_exe.text()
+            self.configs['processors']['L2_SI'] = data
 
-        data = { 'workingDirectory' : self.ui.in_pam_wd.text() }
-        if self.ui.chk_pam_script.isChecked():
-            data['script'] = self.ui.in_pam_exe.text()
-        else:
-            data['executable'] = self.ui.in_pam_exe.text()
-        self.configs['processors']['PAM'] = data
+            data = { 'workingDirectory' : self.ui.in_l2ft_wd.text() }
+            if self.ui.chk_l2ft_script.isChecked():
+                data['script'] = self.ui.in_l2ft_exe.text()
+            else:
+                data['executable'] = self.ui.in_l2ft_exe.text()
+            self.configs['processors']['L2_FT'] = data
 
-        # write configs
-        with open('configurations.yaml', 'w') as f:
-            yaml.dump(self.configs, f)
+            data = { 'workingDirectory' : self.ui.in_l2fb_wd.text() }
+            if self.ui.chk_l2fb_script.isChecked():
+                data['script'] = self.ui.in_l2fb_exe.text()
+            else:
+                data['executable'] = self.ui.in_l2fb_exe.text()
+            self.configs['processors']['L2_FB'] = data
 
-        self.close()
+            data = { 'workingDirectory' : self.ui.in_pam_wd.text() }
+            if self.ui.chk_pam_script.isChecked():
+                data['script'] = self.ui.in_pam_exe.text()
+            else:
+                data['executable'] = self.ui.in_pam_exe.text()
+            self.configs['processors']['PAM'] = data
+
+            # write configs
+            with open('configurations.yaml', 'w') as f:
+                yaml.dump(self.configs, f)
+
+            self.close()
+        except Exception as e:
+            error_dialog = qtw.QErrorMessage(self)
+            error_dialog.showMessage(str(e))
 
 
     def set_start(self, ref):
