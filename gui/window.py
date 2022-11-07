@@ -202,12 +202,11 @@ class OrchestratorWindow(qtw.QMainWindow):
             data['executable'] = self.ui.in_pam_exe.text()
         self.configs['processors']['PAM'] = data
 
-
-
-
         # write configs
         with open('configurations.yaml', 'w') as f:
             yaml.dump(self.configs, f)
+
+        self.close()
 
 
     def set_start(self, ref):
