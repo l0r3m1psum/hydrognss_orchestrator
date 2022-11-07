@@ -4,4 +4,5 @@ channels:
   - bioconda
 dependencies:
   - snakemake-minimal
+  - pyqt
 prefix: /home/flavio/mambaforge/envs/e2es-orchestrator

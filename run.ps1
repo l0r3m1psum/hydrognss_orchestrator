@@ -16,4 +16,6 @@ if (Test-Path $CacheFolder) {
 }
 
 conda activate e2es-orchestrator
-cd $PSScriptRoot; snakemake --cores 1 RUN
+cd $PSScriptRoot
+python .\gui\gui.py
+snakemake --cores 1 RUN
