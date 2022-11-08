@@ -17,17 +17,14 @@
 - Run command `conda env create -f environment.yml`
 - Run command `cp configurations.sample.yaml configurations.yaml`
 
-## Configuration
-
-### GUI 
-
-A simple GUI is provided in order to simplify the configuration step before executing the orchestrator. Each field in the GUI is labelled using the same configuration file key ( use the _Configurations_ section below for reference )
-
-In order to open the GUI
+## Usage 
+### Automatic
+- Open Anaconda Powershell
 - Run command `cd /path/to/e2es-orchestrator`
-- Run command `python gui/window.py`
-
+- Run the `run.ps1` script in an Anaconda Powershell
 ### Manual
+#### Configuration
+
 The configuration file `configurations.yaml` must be set up before each run of the orchestator
 
 Orchestriation process must be configured properly using the following
@@ -43,20 +40,19 @@ Each processor path must be configured properly using the following
 - `workingDirectory`: absolute path to processor delivery folder; internal folder structure must mimic ICD structure 
 - `executable` or `script`: relative path ( starting from `workingDirectory` ) to processor executable or python script
 
-#### Example
+( Check `configurations.sample.yaml` as an example of a working configuration )
 
-Check `configurations.sample.yaml` as an example of a working configuration.
 
-## Usage 
-### Automatic
-- Run the `run.ps1` script in a powershell
-### Manual
-- Check the `configurations.yaml` and apply changes according to your needs. See _Configuration_ section above for reference
+#### Run 
+- Check the `configurations.yaml` and apply changes according to your need
 - Delete `context`, `.snakemake` and `__pycache__` folders if they are present in the `orchestrator` folder
 - Open anaconda powershell prompt ( find it using the Windows search bar )
 - Run command `cd /path/to/e2es-orchestrator`
 - Run command `conda activate e2es-orchestrator`
 - Run command `snakemake --cores 1 RUN`
+
+
+
 
 ## Troubleshoot
 - If any of the processor stops unexpectedly or some other error arise ( e.g. from snakemake ), maybe some transient folders are present in the orchestrator folder. Delete them and try again.
