@@ -364,7 +364,7 @@ class Ui_MainWindow(object):
         self.label_4.setText(_translate("MainWindow", "Backup File:"))
         self.btn_browse_bkpFile.setText(_translate("MainWindow", "Browse"))
         self.chk_pam.setText(_translate("MainWindow", "Use PAM"))
-        self.btn_save.setText(_translate("MainWindow", "Save and Close"))
+        self.btn_save.setText(_translate("MainWindow", "Save"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.orchestrator), _translate("MainWindow", "Orchestrator"))
         self.label_2.setText(_translate("MainWindow", "Executable:"))
         self.label.setText(_translate("MainWindow", "Working Directory:"))
