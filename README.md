@@ -18,6 +18,16 @@
 - Run command `cp configurations.sample.yaml configurations.yaml`
 
 ## Configuration
+
+### GUI 
+
+A simple GUI is provided in order to simplify the configuration step before executing the orchestrator. Each field in the GUI is labelled using the same configuration file key ( use the _Configurations_ section below for reference )
+
+In order to open the GUI
+- Run command `cd /path/to/e2es-orchestrator`
+- Run command `python gui/window.py`
+
+### Manual
 The configuration file `configurations.yaml` must be set up before each run of the orchestator
 
 Orchestriation process must be configured properly using the following
@@ -33,19 +43,15 @@ Each processor path must be configured properly using the following
 - `workingDirectory`: absolute path to processor delivery folder; internal folder structure must mimic ICD structure 
 - `executable` or `script`: relative path ( starting from `workingDirectory` ) to processor executable or python script
 
-### Example
+#### Example
 
 Check `configurations.sample.yaml` as an example of a working configuration.
-
-### GUI
-
-A simple GUI is provided in order to simplify the configuration step before executing the orchestrator. Each field in the GUI is labelled using the same configuration file key ( use the _Configurations_ section above as a reference )
 
 ## Usage 
 ### Automatic
 - Run the `run.ps1` script in a powershell
 ### Manual
-- Check the `configurations.yaml` and apply changes according to your needs
+- Check the `configurations.yaml` and apply changes according to your needs. See _Configuration_ section above for reference
 - Delete `context`, `.snakemake` and `__pycache__` folders if they are present in the `orchestrator` folder
 - Open anaconda powershell prompt ( find it using the Windows search bar )
 - Run command `cd /path/to/e2es-orchestrator`
