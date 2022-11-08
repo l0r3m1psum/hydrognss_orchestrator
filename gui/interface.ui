@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="orchestrator">
        <property name="enabled">
@@ -306,7 +306,7 @@
         <item>
          <layout class="QGridLayout" name="gridLayout">
           <item row="1" column="0">
-           <widget class="QLabel" name="label_2">
+           <widget class="QLabel" name="lbl_l1a_exe">
             <property name="text">
              <string>Executable:</string>
             </property>
@@ -351,7 +351,7 @@
         <item>
          <layout class="QGridLayout" name="gridLayout_3">
           <item row="1" column="0">
-           <widget class="QLabel" name="label_5">
+           <widget class="QLabel" name="lbl_l1b_exe">
             <property name="text">
              <string>Executable:</string>
             </property>
@@ -396,7 +396,7 @@
         <item>
          <layout class="QGridLayout" name="gridLayout_4">
           <item row="1" column="0">
-           <widget class="QLabel" name="label_7">
+           <widget class="QLabel" name="lbl_l2fb_exe">
             <property name="text">
              <string>Executable:</string>
             </property>
@@ -441,7 +441,7 @@
         <item>
          <layout class="QGridLayout" name="gridLayout_5">
           <item row="1" column="0">
-           <widget class="QLabel" name="label_9">
+           <widget class="QLabel" name="lbl_l2sm_exe">
             <property name="text">
              <string>Executable:</string>
             </property>
@@ -486,7 +486,7 @@
         <item>
          <layout class="QGridLayout" name="gridLayout_6">
           <item row="1" column="0">
-           <widget class="QLabel" name="label_11">
+           <widget class="QLabel" name="lbl_l2si_exe">
             <property name="text">
              <string>Executable:</string>
             </property>
@@ -531,7 +531,7 @@
         <item>
          <layout class="QGridLayout" name="gridLayout_7">
           <item row="1" column="0">
-           <widget class="QLabel" name="label_13">
+           <widget class="QLabel" name="lbl_l2ft_exe">
             <property name="text">
              <string>Executable:</string>
             </property>
@@ -576,7 +576,7 @@
         <item>
          <layout class="QGridLayout" name="gridLayout_8">
           <item row="1" column="0">
-           <widget class="QLabel" name="label_15">
+           <widget class="QLabel" name="lbl_pam_exe">
             <property name="text">
              <string>Executable:</string>
             </property>

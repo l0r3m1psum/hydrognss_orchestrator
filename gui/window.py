@@ -6,17 +6,16 @@ import yaml
 
 class OrchestratorWindow(qtw.QMainWindow):
     def __init__(self, *args, **kwargs):
+        # init
         super().__init__(*args, **kwargs)
-        
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-
-        # initial disabled inputs
+        # disabled inputs
         self.ui.in_bkpFile.setEnabled(False)
         self.ui.btn_browse_bkpFile.setEnabled(False)
 
-        # connections
+        # ui connections
         self.ui.btn_save.clicked.connect(self._save)
         self.ui.btn_browse_bkpFile.clicked.connect(self.set_backup_file)
         self.ui.btn_browse_bkpRoot.clicked.connect(self.set_backup_root)
@@ -24,15 +23,55 @@ class OrchestratorWindow(qtw.QMainWindow):
         for r in self.ui.start_group.children():
             if isinstance(r, qtw.QRadioButton):
                 r.clicked.connect(lambda checked,ref=r: self.set_start(ref))
-        self.ui.btn_l1a_browse.clicked.connect(lambda: self.set_processor_paths('l1a'))
-        self.ui.btn_l1b_browse.clicked.connect(lambda: self.set_processor_paths('l1b'))
-        self.ui.btn_l2fb_browse.clicked.connect(lambda: self.set_processor_paths('l2fb'))
-        self.ui.btn_l2ft_browse.clicked.connect(lambda: self.set_processor_paths('l2ft'))
-        self.ui.btn_l2si_browse.clicked.connect(lambda: self.set_processor_paths('l2si'))
-        self.ui.btn_l2sm_browse.clicked.connect(lambda: self.set_processor_paths('l2sm'))
-        self.ui.btn_pam_browse.clicked.connect(lambda: self.set_processor_paths('pam'))
+        self.ui.btn_l1a_browse.clicked.connect(lambda: self.set_processor_paths(
+            self.ui.in_l1a_wd,
+            self.ui.in_l1a_exe,
+            self.ui.chk_l1a_script
+        ))
+        self.ui.btn_l1b_browse.clicked.connect(lambda: self.set_processor_paths(
+            self.ui.in_l1b_wd,
+            self.ui.in_l1b_exe,
+            self.ui.chk_l1b_script
+        ))
+        self.ui.btn_l2sm_browse.clicked.connect(lambda: self.set_processor_paths(
+            self.ui.in_l2sm_wd,
+            self.ui.in_l2sm_exe,
+            self.ui.chk_l2sm_script
+        ))
+        self.ui.btn_l2si_browse.clicked.connect(lambda: self.set_processor_paths(
+            self.ui.in_l2si_wd,
+            self.ui.in_l2si_exe,
+            self.ui.chk_l2si_script
+        ))
+        self.ui.btn_l2fb_browse.clicked.connect(lambda: self.set_processor_paths(
+            self.ui.in_l2fb_wd,
+            self.ui.in_l2fb_exe,
+            self.ui.chk_l2fb_script
+        ))
+        self.ui.btn_l2ft_browse.clicked.connect(lambda: self.set_processor_paths(
+            self.ui.in_l2ft_wd,
+            self.ui.in_l2ft_exe,
+            self.ui.chk_l2ft_script
+        ))
+        self.ui.btn_pam_browse.clicked.connect(lambda: self.set_processor_paths(
+            self.ui.in_pam_wd,
+            self.ui.in_pam_exe,
+            self.ui.chk_pam_script
+        ))
+
+        self.ui.chk_l1a_script.clicked.connect(lambda: self.set_label(self.ui.chk_l1a_script, self.ui.lbl_l1a_exe))
+        self.ui.chk_l1b_script.clicked.connect(lambda: self.set_label(self.ui.chk_l1b_script, self.ui.lbl_l1b_exe))
+        self.ui.chk_l2sm_script.clicked.connect(lambda: self.set_label(self.ui.chk_l2sm_script, self.ui.lbl_l2sm_exe))
+        self.ui.chk_l2si_script.clicked.connect(lambda: self.set_label(self.ui.chk_l2si_script, self.ui.lbl_l2si_exe))
+        self.ui.chk_l2ft_script.clicked.connect(lambda: self.set_label(self.ui.chk_l2ft_script, self.ui.lbl_l2ft_exe))
+        self.ui.chk_l2fb_script.clicked.connect(lambda: self.set_label(self.ui.chk_l2fb_script, self.ui.lbl_l2fb_exe))
+        self.ui.chk_pam_script.clicked.connect(lambda: self.set_label(self.ui.chk_pam_script, self.ui.lbl_pam_exe))
         
+        # load configs
         self._load()
+
+        #
+        self.ui.tabWidget.setCurrentIndex(0)
 
     def _load(self):
         # read configs
@@ -63,49 +102,49 @@ class OrchestratorWindow(qtw.QMainWindow):
         self.ui.in_l1a_wd.setText(self.configs['processors']['L1_A']['workingDirectory'])
         if 'script' in self.configs['processors']['L1_A']:
             self.ui.in_l1a_exe.setText(self.configs['processors']['L1_A']['script'])
-            self.ui.chk_l1a_script.setChecked(True)
+            self.ui.chk_l1a_script.click()
         else:
             self.ui.in_l1a_exe.setText(self.configs['processors']['L1_A']['executable'])
 
         self.ui.in_l1b_wd.setText(self.configs['processors']['L1_B']['workingDirectory'])
         if 'script' in self.configs['processors']['L1_B']:
             self.ui.in_l1b_exe.setText(self.configs['processors']['L1_B']['script'])
-            self.ui.chk_l1b_script.setChecked(True)
+            self.ui.chk_l1b_script.click()
         else:
             self.ui.in_l1b_exe.setText(self.configs['processors']['L1_B']['executable'])
 
         self.ui.in_l2fb_wd.setText(self.configs['processors']['L2_FB']['workingDirectory'])
         if 'script' in self.configs['processors']['L2_FB']:
             self.ui.in_l2fb_exe.setText(self.configs['processors']['L2_FB']['script'])
-            self.ui.chk_l2fb_script.setChecked(True)
+            self.ui.chk_l2fb_script.click()
         else:
             self.ui.in_l2fb_exe.setText(self.configs['processors']['L2_FB']['executable'])
 
         self.ui.in_l2sm_wd.setText(self.configs['processors']['L2_SM']['workingDirectory'])
         if 'script' in self.configs['processors']['L2_SM']:
             self.ui.in_l2sm_exe.setText(self.configs['processors']['L2_SM']['script'])
-            self.ui.chk_l2sm_script.setChecked(True)
+            self.ui.chk_l2sm_script.click()
         else:
             self.ui.in_l2sm_exe.setText(self.configs['processors']['L2_SM']['executable'])
 
         self.ui.in_l2si_wd.setText(self.configs['processors']['L2_SI']['workingDirectory'])
         if 'script' in self.configs['processors']['L2_SI']:
             self.ui.in_l2si_exe.setText(self.configs['processors']['L2_SI']['script'])
-            self.ui.chk_l2si_script.setChecked(True)
+            self.ui.chk_l2si_script.click()
         else:
             self.ui.in_l2si_exe.setText(self.configs['processors']['L2_SI']['executable'])
 
         self.ui.in_l2ft_wd.setText(self.configs['processors']['L2_FT']['workingDirectory'])
         if 'script' in self.configs['processors']['L2_FT']:
             self.ui.in_l2ft_exe.setText(self.configs['processors']['L2_FT']['script'])
-            self.ui.chk_l2ft_script.setChecked(True)
+            self.ui.chk_l2ft_script.click()
         else:
             self.ui.in_l2ft_exe.setText(self.configs['processors']['L2_FT']['executable'])
 
         self.ui.in_pam_wd.setText(self.configs['processors']['PAM']['workingDirectory'])
         if 'script' in self.configs['processors']['PAM']:
             self.ui.in_pam_exe.setText(self.configs['processors']['PAM']['script'])
-            self.ui.chk_pam_script.setChecked(True)
+            self.ui.chk_pam_script.click()
         else:
             self.ui.in_pam_exe.setText(self.configs['processors']['PAM']['executable'])
 
@@ -212,6 +251,11 @@ class OrchestratorWindow(qtw.QMainWindow):
             error_dialog = qtw.QErrorMessage(self)
             error_dialog.showMessage(str(e))
 
+    def set_label(self, chk, lbl):
+        if chk.isChecked():
+            lbl.setText('Python Script:')
+        else:
+            lbl.setText('Executable:')
 
     def set_start(self, ref):
         # disable all end processor, then enable only possible ones
@@ -272,18 +316,11 @@ class OrchestratorWindow(qtw.QMainWindow):
         fileName, _ = qtw.QFileDialog.getOpenFileName(self, 'Select Backup File', qtc.QDir.rootPath() , '*.zip')
         self.ui.in_bkpFile.setText(str(fileName))
 
-    def set_processor_paths(self, processor):
-        try:
-            elements = self.ui.tabWidget.currentWidget().children()
-            wd_in = next(x for x in elements if f'{processor}_wd' in x.objectName())
-            exe_in = next(x for x in elements if f'{processor}_exe' in x.objectName())
-            is_script = next(x for x in elements if f'{processor}_script' in x.objectName())
-            ext = '*.py' if is_script.isChecked() else '*.exe'
-            fileName, _ = qtw.QFileDialog.getOpenFileName(self, f'Select {processor} Executable', qtc.QDir.rootPath() , ext)
-            wd_in.setText(path.dirname(fileName))
-            exe_in.setText(path.join('.',path.relpath(fileName, start = path.dirname(fileName))))
-        except:
-            pass
+    def set_processor_paths(self, in_wd, in_exe, chk_script): 
+        ext = '*.py' if chk_script.isChecked() else '*.exe'
+        fileName, _ = qtw.QFileDialog.getOpenFileName(self, f'Select {"python script" if chk_script.isChecked() else "executable"}', qtc.QDir.rootPath() , ext)
+        in_wd.setText(path.dirname(fileName))
+        in_exe.setText(path.join('.',path.relpath(fileName, start = path.dirname(fileName))))
 
 
 if __name__ == '__main__':
