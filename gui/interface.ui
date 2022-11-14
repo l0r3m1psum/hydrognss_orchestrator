@@ -1,0 +1,623 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>618</width>
+    <height>449</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>E2ES Orchestrator - Configuration Setup</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout_8">
+    <item>
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="currentIndex">
+       <number>1</number>
+      </property>
+      <widget class="QWidget" name="orchestrator">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <attribute name="title">
+        <string>Orchestrator</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_5">
+        <item>
+         <widget class="QGroupBox" name="start_group">
+          <property name="title">
+           <string>Start</string>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_4">
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout">
+             <item>
+              <widget class="QRadioButton" name="s_l1a">
+               <property name="text">
+                <string>L1A</string>
+               </property>
+               <property name="data" stdset="0">
+                <string notr="true">L1_A</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="s_l1b">
+               <property name="text">
+                <string>L1B</string>
+               </property>
+               <property name="data" stdset="0">
+                <string notr="true">L1_B</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="s_l2fb">
+               <property name="text">
+                <string>L2FB</string>
+               </property>
+               <property name="data" stdset="0">
+                <string notr="true">L2_FB</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="s_l2sm">
+               <property name="text">
+                <string>L2SM</string>
+               </property>
+               <property name="data" stdset="0">
+                <string notr="true">L2_SM</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="s_l2si">
+               <property name="text">
+                <string>L2SI</string>
+               </property>
+               <property name="data" stdset="0">
+                <string notr="true">L2_SI</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="s_l2ft">
+               <property name="text">
+                <string>L2FT</string>
+               </property>
+               <property name="data" stdset="0">
+                <string notr="true">L2_FT</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="end_group">
+          <property name="title">
+           <string>End</string>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_5">
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_2">
+             <item>
+              <widget class="QRadioButton" name="e_l1a">
+               <property name="text">
+                <string>L1A</string>
+               </property>
+               <property name="data" stdset="0">
+                <string notr="true">L1_A</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="e_l1b">
+               <property name="text">
+                <string>L1B</string>
+               </property>
+               <property name="data" stdset="0">
+                <string notr="true">L1_B</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="e_l2fb">
+               <property name="text">
+                <string>L2FB</string>
+               </property>
+               <property name="data" stdset="0">
+                <string notr="true">L2_FB</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="e_l2sm">
+               <property name="text">
+                <string>L2SM</string>
+               </property>
+               <property name="data" stdset="0">
+                <string notr="true">L2_SM</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="e_l2si">
+               <property name="text">
+                <string>L2SI</string>
+               </property>
+               <property name="data" stdset="0">
+                <string notr="true">L2_SI</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="e_l2ft">
+               <property name="text">
+                <string>L2FT</string>
+               </property>
+               <property name="data" stdset="0">
+                <string notr="true">L2_FT</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="data_group">
+          <property name="title">
+           <string>Data</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_4">
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_3">
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_3">
+               <item>
+                <widget class="QLabel" name="label_3">
+                 <property name="text">
+                  <string>Data Root:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="in_dataRoot">
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_browse_dataRoot">
+                 <property name="text">
+                  <string>Browse</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_9">
+               <item>
+                <widget class="QLabel" name="label_16">
+                 <property name="text">
+                  <string>Backup Root:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="in_bkpRoot">
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_browse_bkpRoot">
+                 <property name="text">
+                  <string>Browse</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_6">
+               <item>
+                <widget class="QLabel" name="label_4">
+                 <property name="text">
+                  <string>Backup File:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="in_bkpFile">
+                 <property name="text">
+                  <string/>
+                 </property>
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btn_browse_bkpFile">
+                 <property name="text">
+                  <string>Browse</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_7">
+          <item>
+           <widget class="QCheckBox" name="chk_pam">
+            <property name="text">
+             <string>Use PAM</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btn_save">
+            <property name="text">
+             <string>Save and RUN</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="l1a">
+       <attribute name="title">
+        <string>L1A</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <layout class="QGridLayout" name="gridLayout">
+          <item row="1" column="0">
+           <widget class="QLabel" name="lbl_l1a_exe">
+            <property name="text">
+             <string>Executable:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Working Directory:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="in_l1a_wd"/>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="in_l1a_exe"/>
+          </item>
+          <item row="2" column="1">
+           <widget class="QPushButton" name="btn_l1a_browse">
+            <property name="text">
+             <string>Browse</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QCheckBox" name="chk_l1a_script">
+            <property name="text">
+             <string>Script</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="l1b">
+       <attribute name="title">
+        <string>L1B</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_11">
+        <item>
+         <layout class="QGridLayout" name="gridLayout_3">
+          <item row="1" column="0">
+           <widget class="QLabel" name="lbl_l1b_exe">
+            <property name="text">
+             <string>Executable:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>Working Directory:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="in_l1b_wd"/>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="in_l1b_exe"/>
+          </item>
+          <item row="2" column="1">
+           <widget class="QPushButton" name="btn_l1b_browse">
+            <property name="text">
+             <string>Browse</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QCheckBox" name="chk_l1b_script">
+            <property name="text">
+             <string>Script</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="l2fb">
+       <attribute name="title">
+        <string>L2FB</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_10">
+        <item>
+         <layout class="QGridLayout" name="gridLayout_4">
+          <item row="1" column="0">
+           <widget class="QLabel" name="lbl_l2fb_exe">
+            <property name="text">
+             <string>Executable:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_8">
+            <property name="text">
+             <string>Working Directory:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="in_l2fb_wd"/>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="in_l2fb_exe"/>
+          </item>
+          <item row="2" column="1">
+           <widget class="QPushButton" name="btn_l2fb_browse">
+            <property name="text">
+             <string>Browse</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QCheckBox" name="chk_l2fb_script">
+            <property name="text">
+             <string>Script</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="l2sm">
+       <attribute name="title">
+        <string>L2SM</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_9">
+        <item>
+         <layout class="QGridLayout" name="gridLayout_5">
+          <item row="1" column="0">
+           <widget class="QLabel" name="lbl_l2sm_exe">
+            <property name="text">
+             <string>Executable:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_10">
+            <property name="text">
+             <string>Working Directory:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="in_l2sm_wd"/>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="in_l2sm_exe"/>
+          </item>
+          <item row="2" column="1">
+           <widget class="QPushButton" name="btn_l2sm_browse">
+            <property name="text">
+             <string>Browse</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QCheckBox" name="chk_l2sm_script">
+            <property name="text">
+             <string>Script</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="l2si">
+       <attribute name="title">
+        <string>L2SI</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_8">
+        <item>
+         <layout class="QGridLayout" name="gridLayout_6">
+          <item row="1" column="0">
+           <widget class="QLabel" name="lbl_l2si_exe">
+            <property name="text">
+             <string>Executable:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_12">
+            <property name="text">
+             <string>Working Directory:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="in_l2si_wd"/>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="in_l2si_exe"/>
+          </item>
+          <item row="2" column="1">
+           <widget class="QPushButton" name="btn_l2si_browse">
+            <property name="text">
+             <string>Browse</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QCheckBox" name="chk_l2si_script">
+            <property name="text">
+             <string>Script</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="l2ft">
+       <attribute name="title">
+        <string>L2FT</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_7">
+        <item>
+         <layout class="QGridLayout" name="gridLayout_7">
+          <item row="1" column="0">
+           <widget class="QLabel" name="lbl_l2ft_exe">
+            <property name="text">
+             <string>Executable:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_14">
+            <property name="text">
+             <string>Working Directory:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="in_l2ft_wd"/>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="in_l2ft_exe"/>
+          </item>
+          <item row="2" column="1">
+           <widget class="QPushButton" name="btn_l2ft_browse">
+            <property name="text">
+             <string>Browse</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QCheckBox" name="chk_l2ft_script">
+            <property name="text">
+             <string>Script</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="pam">
+       <attribute name="title">
+        <string>PAM</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <layout class="QGridLayout" name="gridLayout_8">
+          <item row="1" column="0">
+           <widget class="QLabel" name="lbl_pam_exe">
+            <property name="text">
+             <string>Executable:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_17">
+            <property name="text">
+             <string>Working Directory:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="in_pam_wd"/>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="in_pam_exe"/>
+          </item>
+          <item row="2" column="1">
+           <widget class="QPushButton" name="btn_pam_browse">
+            <property name="text">
+             <string>Browse</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QCheckBox" name="chk_pam_script">
+            <property name="text">
+             <string>Script</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
