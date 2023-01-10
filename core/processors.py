@@ -271,13 +271,14 @@ class L2_FT(Processor):
         self.ctx['processors'][self.__class__.__name__]['args'] = args.split(' ')
 
 class L2_SI(Processor):
-    argsTemplate = '-P {DataRelease_folder}'
+    argsTemplate = '-P {DataRelease_folder} -M {modelfolder}'
     def __init__(self, context, output) -> None:
         super().__init__(context, output)
 
     def _build_args(self):
         args = self.argsTemplate
         args = args.replace('{DataRelease_folder}',os.path.join(self.ctx['dataRoot'],DATA_RELEASE))
+        args = args.replace('{modelfolder}',os.path.join(self.ctx['dataRoot'],'Auxiliary_Data\L2OP-SI'))
         self.log.debug(f'Built args string: {args}')
 
         self.ctx['processors'][self.__class__.__name__]['args'] = args.split(
