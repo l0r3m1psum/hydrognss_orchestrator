@@ -42,6 +42,13 @@ rule L1_B:
         ctx = read_from_yaml(input[0])
         p = L1_B(ctx, output[0])
         p.start()
+        ctx['processors']['L1_B']['script'] = 'Run_L1Merge_with_dates.py'
+        ctx['processors']['L1_B']['workingDirectory'] = 'C:/L1OP-MM/scripts'
+        p = L1_B(ctx, output[0])
+        print("*"*20)
+        print("* Starting L1OP-MM")
+        print("*"*20)
+        p.start()
 
 rule L2_FT:
     input: rules.LOAD.output if config['start'] == 'L2_FT' else rules.L1_B.output
