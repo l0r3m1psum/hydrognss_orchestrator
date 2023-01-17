@@ -118,6 +118,13 @@ class OrchestratorWindow(qtw.QMainWindow):
         else:
             self.ui.in_l1b_exe.setText(self.configs['processors']['L1_B']['executable'])
 
+        self.ui.in_l1b_wd2.setText(self.configs['processors']['L1_B2']['workingDirectory'])
+        if 'script' in self.configs['processors']['L1_B2']:
+            self.ui.in_l1b_exe2.setText(self.configs['processors']['L1_B2']['script'])
+            self.ui.chk_l1b_script2.click()
+        else:
+            self.ui.in_l1b_exe2.setText(self.configs['processors']['L1_B2']['executable'])
+
         self.ui.in_l2fb_wd.setText(self.configs['processors']['L2_FB']['workingDirectory'])
         if 'script' in self.configs['processors']['L2_FB']:
             self.ui.in_l2fb_exe.setText(self.configs['processors']['L2_FB']['script'])
@@ -211,6 +218,13 @@ class OrchestratorWindow(qtw.QMainWindow):
             else:
                 data['executable'] = self.ui.in_l1b_exe.text()
             self.configs['processors']['L1_B'] = data
+
+            data = { 'workingDirectory' : self.ui.in_l1b_wd2.text() }
+            if self.ui.chk_l1b_script2.isChecked():
+                data['script'] = self.ui.in_l1b_exe2.text()
+            else:
+                data['executable'] = self.ui.in_l1b_exe2.text()
+            self.configs['processors']['L1_B2'] = data
 
             data = { 'workingDirectory' : self.ui.in_l2sm_wd.text() }
             if self.ui.chk_l2sm_script.isChecked():

@@ -12,6 +12,9 @@ processors:
   L1_B:
     workingDirectory: C:\L1B\
     script: .\scripts\Run_L1b_Processor_with_dates.py
+  L1_B2:
+    workingDirectory: C:/L1OP-MM/scripts
+    script: Run_L1Merge_with_dates.py
   L2_FB: 
     workingDirectory: C:\L2FB\
     executable: .\bin\L2PP_FB_v04.exe
