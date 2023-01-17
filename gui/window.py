@@ -33,6 +33,11 @@ class OrchestratorWindow(qtw.QMainWindow):
             self.ui.in_l1b_exe,
             self.ui.chk_l1b_script
         ))
+        self.ui.btn_l1b_browse2.clicked.connect(lambda: self.set_processor_paths(
+            self.ui.in_l1b_wd2,
+            self.ui.in_l1b_exe2,
+            self.ui.chk_l1b_script2
+        ))
         self.ui.btn_l2sm_browse.clicked.connect(lambda: self.set_processor_paths(
             self.ui.in_l2sm_wd,
             self.ui.in_l2sm_exe,
@@ -316,7 +321,7 @@ class OrchestratorWindow(qtw.QMainWindow):
         fileName, _ = qtw.QFileDialog.getOpenFileName(self, 'Select Backup File', qtc.QDir.rootPath() , '*.zip')
         self.ui.in_bkpFile.setText(str(fileName))
 
-    def set_processor_paths(self, in_wd, in_exe, chk_script): 
+    def set_processor_paths(self, in_wd, in_exe, chk_script):
         ext = '*.py' if chk_script.isChecked() else '*.exe'
         fileName, _ = qtw.QFileDialog.getOpenFileName(self, f'Select {"python script" if chk_script.isChecked() else "executable"}', qtc.QDir.rootPath() , ext)
         in_wd.setText(path.dirname(fileName))
