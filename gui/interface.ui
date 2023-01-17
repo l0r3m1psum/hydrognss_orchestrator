@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="orchestrator">
        <property name="enabled">
@@ -350,10 +350,10 @@
        <layout class="QVBoxLayout" name="verticalLayout_11">
         <item>
          <layout class="QGridLayout" name="gridLayout_3">
-          <item row="1" column="0">
-           <widget class="QLabel" name="lbl_l1b_exe">
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_2">
             <property name="text">
-             <string>Executable:</string>
+             <string>Working Directory2:</string>
             </property>
            </widget>
           </item>
@@ -364,11 +364,21 @@
             </property>
            </widget>
           </item>
-          <item row="0" column="1">
-           <widget class="QLineEdit" name="in_l1b_wd"/>
+          <item row="3" column="1">
+           <widget class="QLineEdit" name="in_l1b_wd2"/>
+          </item>
+          <item row="4" column="1">
+           <widget class="QLineEdit" name="in_l1b_exe2"/>
           </item>
           <item row="1" column="1">
            <widget class="QLineEdit" name="in_l1b_exe"/>
+          </item>
+          <item row="2" column="0">
+           <widget class="QCheckBox" name="chk_l1b_script">
+            <property name="text">
+             <string>Script</string>
+            </property>
+           </widget>
           </item>
           <item row="2" column="1">
            <widget class="QPushButton" name="btn_l1b_browse">
@@ -377,10 +387,34 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="0">
-           <widget class="QCheckBox" name="chk_l1b_script">
+          <item row="1" column="0">
+           <widget class="QLabel" name="lbl_l1b_exe">
             <property name="text">
-             <string>Script</string>
+             <string>Executable:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>Executable2:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="in_l1b_wd"/>
+          </item>
+          <item row="5" column="0">
+           <widget class="QCheckBox" name="chk_l1b_script2">
+            <property name="text">
+             <string>Script2</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QPushButton" name="btn_l1b_browse2">
+            <property name="text">
+             <string>Browse2</string>
             </property>
            </widget>
           </item>
