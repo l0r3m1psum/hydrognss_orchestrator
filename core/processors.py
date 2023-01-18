@@ -177,6 +177,7 @@ class L1_A(Processor):
         self.ctx['referenceFromL1A'] = pam_data_path_src
         self.log.debug(f'Copying PAM data from {pam_data_path_src} to {pam_data_path_dst}')
         shutil.copy(pam_data_path_src, pam_data_path_dst)
+        # shutil.copy(pam_data_path_src, os.path.join(self.ctx['dataRoot'], DATA_RELEASE)) # NOTE: this may be useful for L2_SM
         self.log.debug('Done.')
 
 
