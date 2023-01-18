@@ -395,7 +395,7 @@
            </widget>
           </item>
           <item row="4" column="0">
-           <widget class="QLabel" name="label_5">
+           <widget class="QLabel" name="lbl_l1b_exe2">
             <property name="text">
              <string>Executable2:</string>
             </property>

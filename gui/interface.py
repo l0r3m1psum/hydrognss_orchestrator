@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'interface.ui'
+# Form implementation generated from reading ui file 'gui/interface.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.7
 #
@@ -206,9 +206,9 @@ class Ui_MainWindow(object):
         self.lbl_l1b_exe = QtWidgets.QLabel(self.l1b)
         self.lbl_l1b_exe.setObjectName("lbl_l1b_exe")
         self.gridLayout_3.addWidget(self.lbl_l1b_exe, 1, 0, 1, 1)
-        self.label_5 = QtWidgets.QLabel(self.l1b)
-        self.label_5.setObjectName("label_5")
-        self.gridLayout_3.addWidget(self.label_5, 4, 0, 1, 1)
+        self.lbl_l1b_exe2 = QtWidgets.QLabel(self.l1b)
+        self.lbl_l1b_exe2.setObjectName("lbl_l1b_exe2")
+        self.gridLayout_3.addWidget(self.lbl_l1b_exe2, 4, 0, 1, 1)
         self.in_l1b_wd = QtWidgets.QLineEdit(self.l1b)
         self.in_l1b_wd.setObjectName("in_l1b_wd")
         self.gridLayout_3.addWidget(self.in_l1b_wd, 0, 1, 1, 1)
@@ -394,7 +394,7 @@ class Ui_MainWindow(object):
         self.chk_l1b_script.setText(_translate("MainWindow", "Script"))
         self.btn_l1b_browse.setText(_translate("MainWindow", "Browse"))
         self.lbl_l1b_exe.setText(_translate("MainWindow", "Executable:"))
-        self.label_5.setText(_translate("MainWindow", "Executable2:"))
+        self.lbl_l1b_exe2.setText(_translate("MainWindow", "Executable2:"))
         self.chk_l1b_script2.setText(_translate("MainWindow", "Script2"))
         self.btn_l1b_browse2.setText(_translate("MainWindow", "Browse2"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.l1b), _translate("MainWindow", "L1B"))

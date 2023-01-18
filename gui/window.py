@@ -66,6 +66,7 @@ class OrchestratorWindow(qtw.QMainWindow):
 
         self.ui.chk_l1a_script.clicked.connect(lambda: self.set_label(self.ui.chk_l1a_script, self.ui.lbl_l1a_exe))
         self.ui.chk_l1b_script.clicked.connect(lambda: self.set_label(self.ui.chk_l1b_script, self.ui.lbl_l1b_exe))
+        self.ui.chk_l1b_script2.clicked.connect(lambda: self.set_label(self.ui.chk_l1b_script2, self.ui.lbl_l1b_exe2))
         self.ui.chk_l2sm_script.clicked.connect(lambda: self.set_label(self.ui.chk_l2sm_script, self.ui.lbl_l2sm_exe))
         self.ui.chk_l2si_script.clicked.connect(lambda: self.set_label(self.ui.chk_l2si_script, self.ui.lbl_l2si_exe))
         self.ui.chk_l2ft_script.clicked.connect(lambda: self.set_label(self.ui.chk_l2ft_script, self.ui.lbl_l2ft_exe))
