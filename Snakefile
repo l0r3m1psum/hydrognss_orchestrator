@@ -74,10 +74,21 @@ rule L2_SM:
         p = L2_SM(ctx, output[0])
         p.start()
 
+import os
+
 rule L2_SI:
     input: rules.LOAD.output if config['start'] == 'L2_SI' else rules.L1_B.output
     output: 'context/L2_SI.yaml'
     run:
+        ret = os.system(f"{os.path.join(ctx['processors']['L2_SI']['workingDirectory'], 'L1B_DR.exe')} -P {os.path.join(ctx['dataRoot'], 'DataRelease')}")
+        if ret != 0:
+                raise Exception("L1B_DR.exe")
+        ret = os.system(f"{os.path.join(ctx['processors']['L2_SI']['workingDirectory'], 'L1B_CC_DR.exe')} -P {os.path.join(ctx['dataRoot'], 'DataRelease')}")
+        if ret != 0:
+                raise Exception("L1B_CC_DR.exe")
+        ctx['processors']['L1_B']['script'] = ctx['processors']['L1_B2']['script']
+        ctx['processors']['L1_B']['workingDirectory'] = ctx['processors']['L1_B2']['workingDirectory']
+        p = L1_B(ctx, output[0])
         ctx = read_from_yaml(input[0])
         p = L2_SI(ctx, output[0])
         p.start()
