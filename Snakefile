@@ -81,7 +81,7 @@ rule L2_SI:
     output: 'context/L2_SI.yaml'
     run:
         ctx = read_from_yaml(input[0])
-        ret = os.system(f"{os.path.join(ctx['processors']['L2_SI']['workingDirectory'], 'L1B_DR.exe')} -P {os.path.join(ctx['dataRoot'], 'DataRelease')}")
+        ret = os.system(f"{os.path.join(ctx['processors']['L2_SI']['workingDirectory'], 'L1B_CX_DR.exe')} -P {os.path.join(ctx['dataRoot'], 'DataRelease')}")
         if ret != 0:
                 raise Exception("L1B_DR.exe")
         ret = os.system(f"{os.path.join(ctx['processors']['L2_SI']['workingDirectory'], 'L1B_CC_DR.exe')} -P {os.path.join(ctx['dataRoot'], 'DataRelease')}")
@@ -90,6 +90,7 @@ rule L2_SI:
         ctx['processors']['L1_B']['script'] = ctx['processors']['L1_B2']['script']
         ctx['processors']['L1_B']['workingDirectory'] = ctx['processors']['L1_B2']['workingDirectory']
         p = L1_B(ctx, output[0])
+        p.start()
         p = L2_SI(ctx, output[0])
         p.start()
 
