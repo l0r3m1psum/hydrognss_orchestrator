@@ -29,6 +29,8 @@ enum Processor {
     L2SM
 }
 
+$ProcessorsNamesForPAM = "L1_A", "L1_B", "L2_FB", "L2_FT", "L2_SI", "L2_SM"
+
 [string]$ConfigFile = Join-Path -Path $PSScriptRoot -ChildPath "config.json"
 
 # TODO: put a try catch here.
@@ -139,7 +141,7 @@ function Do-Orchestration {
         if ($usePAM) {
             # TODO: check that the run ends with an L2 processor or L1B is fine too?
             Write-Output "Running PAM."
-            Run-Processor -FilePath $PAMexe -ArgumentList $End.ToString(), `
+            Run-Processor -FilePath $PAMexe -ArgumentList $ProcessorsNamesForPAM[$End], `
                 (Join-Path -Path $DataDir -ChildPath "Auxiliary_Data"), `
                 $BackupDir, ($BackupName -replace "\.zip$") `
                 -WorkingDirectory $PAMwd
