@@ -29,13 +29,17 @@ enum Processor {
     L2SM
 }
 
+[string]$ConfigFile = Join-Path -Path $PSScriptRoot -ChildPath "config.json"
+
 # TODO: put a try catch here.
-$Config = Get-Content "config.json" | Out-String | ConvertFrom-Json
+$Config = Get-Content $ConfigFile | Out-String | ConvertFrom-Json
 
 ################################################################################
 # Orchestrator                                                                 #
 ################################################################################
 
+# NOTE: This function chahges the path of the script and does not restore it.
+#       This could cause problems.
 function Do-Orchestration {
     param (
         # Which processors to run.
@@ -488,10 +492,9 @@ $SaveSettingsButton.Add_Click({
 `t"PAMExe":       "$($PAMExeTextBox.Text)",
 `t"PAMWorkDir":   "$($PAMWorkDirTextBox.Text)"
 }
-"@ | Out-File -FilePath "config.json"
+"@ | Out-File -FilePath $ConfigFile
 })
 
-# TODO: we need a button to save the new configuration.
 $SettingsForm = New-Object System.Windows.Forms.Form
 $SettingsForm.ClientSize = "550, 650"
 $SettingsForm.Text = "Orchestrator - Settings"
