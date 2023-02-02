@@ -24,6 +24,9 @@ def get_timestamp():
     return calendar.timegm(time.gmtime())
 
 def get_data_time_boudaries_from(data_path):
+    """Given the following directory structure yyyy-mm\\dd in the data_path
+    directory this function takes the minumum and the maximum dates and returns
+    both of them as strings in this form yyyy-mm-dd."""
     ym_list = os.listdir(os.path.normpath(data_path))
     ym_list.sort()
     start_ym, end_ym = ym_list[0], ym_list[len(ym_list) - 1]

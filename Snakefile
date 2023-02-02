@@ -98,6 +98,8 @@ rule BACKUP:
     input: getattr(rules, config['end']).output
     output: 'context/backup.yaml'
     run:
+        # The backup is created has either the name of the HSAVERS run or the
+        # name of the previous one with a new timestamp.
         ctx = read_from_yaml(input[0])
         if ctx['start'] != 'L1_A':
             backupFile_no_timestamp = ctx['backupFile'].split('_')
