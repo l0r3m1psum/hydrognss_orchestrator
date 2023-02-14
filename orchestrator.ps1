@@ -97,6 +97,7 @@ function Do-Orchestration {
     # TODO: check all invariants
 
     [string]$DataReleaseDir = Join-Path -Path $DataDir -ChildPath "DataRelease"
+    [string]$AuxiliaryDataDir = Join-Path -Path $DataDir -ChildPath "Auxiliary_Data"
 
     # This is used later to create the backup name and to give input to the PAM
     # and it is set either when loading a backup or when running HSAVERS.
@@ -142,8 +143,7 @@ function Do-Orchestration {
             # TODO: check that the run ends with an L2 processor or L1B is fine too?
             Write-Output "Running PAM."
             Run-Processor -FilePath $PAMexe -ArgumentList $ProcessorsNamesForPAM[$End], `
-                (Join-Path -Path $DataDir -ChildPath "Auxiliary_Data"), `
-                $BackupDir, ($BackupName -replace "\.zip$") `
+                $AuxiliaryDataDir, $BackupDir, ($BackupName -replace "\.zip$") `
                 -WorkingDirectory $PAMwd
         }
     }
@@ -239,22 +239,28 @@ function Do-Orchestration {
         }
         L2FB {
             Write-Output "Running L2_FB."
-            Run-Processor $L2_FBexe -ArgumentList $StartDate, $EndDate, $DataDir, "yes" `
+            Run-Processor -FilePath $L2_FBexe `
+                -ArgumentList $StartDate, $EndDate, $DataDir, "yes" `
                 -WorkingDirectory $L2_FBwd
             Do-BackupAndPAM
             return
         }
         L2SM {
-            # TODO: implements this.
-            # argsTemplate = '-input {dataDir} {startDate} {endDate} 1 25 L1 L'
+            # TODO: check this.
+            Run-Processor -FilePath $L2_SIexe `
+                -ArgumentList "-input", $DataDir, $StartDate, $EndDate, "1", "25", "L1", "L" `
+                -WorkingDirectory $L2_SMwd
             Do-BackupAndPAM
             return
         }
         # Questo deve usare L1_B diviso in due parti, ma L1 cosa deve fare?
         L2SI {
-            # TODO: implements this.
-            # the special one
-            # argsTemplate = '-P {DataRelease_folder} -M {modelfolder}'
+            # TODO: We have to run L1B_CX_DR.exe L1B_CC_DR.exe and L1_B_MM
+            Write-Output "Running L2_SI"
+            Run-Processor -FilePath $L2_SIexe `
+                -ArgumentList "-P", $DataReleaseDir, "-M", `
+                (Join-Path -Path $AuxiliaryDataDir -ChildPath "L2OP-SI") `
+                -WorkingDirectory $L2_SIwd
             Do-BackupAndPAM
             return
         }
