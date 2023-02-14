@@ -215,10 +215,6 @@ function Do-Orchestration {
         Write-Output "Running L1_B."
         Run-Processor -FilePath $L1_Bexe -ArgumentList $StartDate, $EndDate `
             -WorkingDirectory $L1_Bwd
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error "L1_B exited with a non zero exit code"
-            return
-        }
         Write-Output "Running L1_B_MM."
         Run-Processor -FilePath $L1_B_MMexe -ArgumentList $StartDate, $EndDate `
             -WorkingDirectory $L1_B_MMwd
