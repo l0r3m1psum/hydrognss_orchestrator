@@ -1,7 +1,6 @@
 """This module contains the code for the GUI and the logic to operate and run
 the orchestrator. This two functionalities are provided in the only three
-exported functions i.e. gui(), run() and
-read_or_create_config_file_and_update_global().
+exported functions i.e. gui(), run() and read_or_create_config_file().
 
 In the code we made use of two lesser known Python functionalities to make the
 code more succint. This two functionalities are the way in which the boolean
@@ -12,12 +11,11 @@ them following this two URLs below.
 https://docs.python.org/3/reference/expressions.html#boolean-operations
 https://docs.python.org/3/reference/compound_stmts.html#function-definitions
 
-This module suffers from time-of-check to time-of-use "vulnerabilities", it
-expects to be the only one to operate on the various files and directories.
-Solving this problem is hard and since this orchestrator is meant to be executed
-in trusted environments we did not tackle it.
-
-TODO: add stuff about file system atomicity.
+This module suffers from time-of-check to time-of-use "vulnerabilities", and
+various it file system atomicity problems, it expects to be the only one to
+operate on the various files and directories. Solving this problem is hard and
+since this orchestrator is meant to be executed in trusted environments we did
+not tackle it.
 """
 
 import enum
@@ -153,14 +151,11 @@ def _escape_str(s: str) -> str:
     # f"{s!r}"[2:-2]
     return s.encode("unicode_escape").decode("utf-8")
 
-def read_and_or_create_config_file() -> typing.Optional[list[str]]:
+def read_or_create_config_file() -> typing.Optional[list[str]]:
     """As the name suggests this function reads the configuration file (or
-    creates it if it does not exists) and then sets the global config variable
-    to it. If anything goes wrong during this process you are going to get the
-    default configuration, we may not be able to save or read the condiguration
-    but at leaxt you can modify it in memory. True is returned if the
-    configuration file is read or written correcly, otherwise False is
-    returned"""
+    creates it if it does not exists) and then return it to you. If None is
+    returned because an error occurred, you can just copy the
+    CONF_VALUES_DEFAULT and use that as the configuration."""
 
     if os.name != "nt":
         print("skipping the configuration file read/creation because we are not"
@@ -341,17 +336,19 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
             raise Exception("unable to copy {l1a_out_dir} to "
                 "{data_release_dir}") from ex
 
+        # TODO: Finish this implementation
         assert False, "not implemented I have to find the way in wich the file is named"
         l1a_file_for_pam = f"{experiment_name}.mat"
 
         experiment_name = list(filter(None, l1a_out.split("\\")))[-1]
 
-    assert experiment_name
+    assert experiment_name, "This variable should have been assigned by now"
 
     print("detecting the dates of the simulation")
     try:
         # We assume there are no other files in this direcotory except the ones
         # with the dates formats.
+        # NOTE: should I try to do some valutation here?
         l1a_l1b_dir = os.path.join(data_release_dir, "L1A_L1B")
         year_month_list = sorted(os.listdir(l1a_l1b_dir))
         start_year_month = year_month_list[0]
@@ -445,7 +442,6 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
     # to use them.
     # https://stackoverflow.com/a/66202218
 
-    assert root
     assert len(conf) == len(Conf)
 
     # If somebody calls us multiple times.
@@ -658,9 +654,9 @@ def _main() -> int:
         print("os not supported, some things are not going to work but the GUI "
             "will show up", file=sys.stderr)
 
-    conf = read_and_or_create_config_file()
+    conf = read_or_create_config_file()
     if not conf:
-        conf = CONF_VALUES_DEFAULT
+        conf = CONF_VALUES_DEFAULT[:]
 
     root = tkinter.Tk()
     gui(root, conf)
