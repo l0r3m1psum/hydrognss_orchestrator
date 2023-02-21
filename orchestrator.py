@@ -295,8 +295,8 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
         raise Exception("unable to create the directory structure") from ex
 
     if backup:
-        backup_name_extension = re.compile("_[0-9]{10}\.zip$")
-        experiment_name = backup_name_extension.sub(backup, "")
+        backup_name_format = re.compile("_[0-9]{10}\.zip$")
+        experiment_name = backup_name_format.sub(backup, "")
         if experiment_name == backup:
             raise Exception("invalud backup file selected")
         print("loading the backup")
@@ -356,15 +356,26 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
 
     print("detecting the dates of the simulation")
     try:
-        # We assume there are no other files in this direcotory except the ones
-        # with the dates formats.
-        # NOTE: should I try to do some valutation here?
+        year_month_format = re.compile("[0-9]{4}-[0-9]{2}")
+        day_format = re.compile("[0-9]{2}")
         l1a_l1b_dir = os.path.join(data_release_dir, "L1A_L1B")
+
         year_month_list = sorted(os.listdir(l1a_l1b_dir))
+        if not all(year_month_format.match(year_month) for year_month in year_month_list):
+            raise Exception("there are files which are not directories of year and month of the data")
         start_year_month = year_month_list[0]
         end_year_month = year_month_list[-1]
-        start_day = sorted(os.listdir(os.path.join(l1a_l1b_dir, start_year_month)))[0]
-        end_day = sorted(os.listdir(os.path.join(l1a_l1b_dir, end_year_month)))[-1]
+
+        start_days = sorted(os.listdir(os.path.join(l1a_l1b_dir, start_year_month)))
+        if not all(day_format.match(day) for day in start_days):
+            raise Exception("there are files which are not named as days in {start_year_month}")
+        start_day = start_days[0]
+
+        end_days = sorted(os.listdir(os.path.join(l1a_l1b_dir, end_year_month)))
+        if not all(day_format.match(day) for day in end_days):
+            raise Exception(f"there are files which are not named as days in {end_year_month}")
+        end_day = end_days[-1]
+
         start_date = f"{start_year_month}-{start_day}"
         end_date = f"{end_year_month}-{end_day}"
     except Exception as ex:
