@@ -36,7 +36,7 @@ import typing
 
 # The processors that the orchestrator manages.
 class Proc(enum.IntEnum):
-    L1A  = enum.auto() # HSAVERS
+    L1A  = 0           # HSAVERS
     L1B  = enum.auto() # ???
     L2FB = enum.auto() # Forest Biomass
     L2FT = enum.auto() # Freeze/Thaw state
@@ -45,7 +45,7 @@ class Proc(enum.IntEnum):
 
 # All the options that can be configured.
 class Conf(enum.IntEnum):
-    BACKUP_DIR      = enum.auto()
+    BACKUP_DIR      = 0
     DATA_DIR        = enum.auto()
     L1A_EXE         = enum.auto()
     L1A_WORK_DIR    = enum.auto()
@@ -173,8 +173,8 @@ def read_or_create_config_file() -> typing.Optional[list[str]]:
                 res_keys = res.keys()
                 if not set(res_keys) == set(config_keys):
                     print(f"bad config file, the keys shall be "
-                        "{sorted(config_keys)} and are {sorted(res_keys)} "
-                        "instead, loading default config instead",
+                        f"{sorted(config_keys)} and are {sorted(res_keys)} "
+                        f"instead, loading default config instead",
                         file=sys.stderr)
                     return None
 
@@ -184,7 +184,7 @@ def read_or_create_config_file() -> typing.Optional[list[str]]:
                         file=sys.stderr)
                     return None
 
-                return [res[option-1] for option in Conf]
+                return [res[option.name] for option in Conf]
 
         except json.JSONDecodeError:
             print("invalid json in configuration file, loading the default one "
@@ -199,7 +199,7 @@ def read_or_create_config_file() -> typing.Optional[list[str]]:
             file=sys.stderr)
 
         res = [
-            f'\t"{option.name}": "{_escape_str(CONF_VALUES_DEFAULT[option-1])}"'
+            f'\t"{option.name}": "{_escape_str(CONF_VALUES_DEFAULT[option])}"'
             for option in Conf
         ]
         res = "{\n" + ",\n".join(res) + "\n}"
@@ -223,7 +223,7 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
     assert start <= end
     # Logical implication i.e. (A -> B) is equivalent to (not A or B).
     assert not pam or end > Proc.L1B
-    assert not backup or start == Proc.L1A
+    assert not backup or start != Proc.L1A
     assert len(conf) == len(Conf)
 
     if os.name != "nt":
@@ -248,7 +248,7 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
 
         if exe is None:
             raise Exception(f"only python and exe files are supported, "
-                "{file_path} is not supported")
+                f"{file_path} is not supported")
 
         # We expect %COMSPEC% to be cmd.exe or something like that.
         res = os.system(f"{exe} {arguments}")
@@ -261,7 +261,7 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
         timestamp = f"{int(time.time())}"
         assert len(timestamp) == 10
         assert experiment_name
-        backup_name = f"{experiment_name}_${timestamp}"
+        backup_name = f"{experiment_name}_{timestamp}"
         print("doing the backup")
         try:
             shutil.make_archive(
@@ -270,14 +270,14 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
         except Exception as ex:
             raise Exception("unable to make backup archive") from ex
         if pam:
+            print("running the PAM")
             run_processor(
                 conf[Conf.PAM_WORK_DIR],
                 conf[Conf.PAM_EXE],
                 f"{PROC_NAMES_PAM[end]} {auxiliary_data_dir} "
-                "{conf[Conf.BACKUP_DIR]} {backup_name}"
+                f"{conf[Conf.BACKUP_DIR]} {backup_name}"
             )
-        # Just to allert the user that the simulation is over.
-        print("\a")
+        print("orchestration finished\a")
 
     print("cleaning up from previous execution")
     if os.path.exists(data_release_dir):
@@ -296,7 +296,7 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
 
     if backup:
         backup_name_format = re.compile("_[0-9]{10}\.zip$")
-        experiment_name = backup_name_format.sub(backup, "")
+        experiment_name = backup_name_format.sub("", backup).split("\\")[-1]
         if experiment_name == backup:
             raise Exception("invalud backup file selected")
         print("loading the backup")
@@ -314,6 +314,7 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
             conf[Conf.L1A_EXE],
             ""
         )
+
         l1a_output_file = os.path.join(
             conf[Conf.L1A_WORK_DIR],
             "..\conf\AbsoluteFilePath.txt"
@@ -329,17 +330,21 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
                 f"L1A produced output in a non existing directory: {l1a_out}"
             )
 
+        experiment_name_format = re.compile("_[0-9]{2}-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-[0-9]{4}_[0-9]{2}_[0-9]{2}_[0-9]{2}$")
         experiment_name = list(filter(None, l1a_out.split("\\")))[-1]
+        if not experiment_name_format.search(experiment_name):
+            raise Exception("the L1A output direcotory has not the correct format")
 
         l1a_out_dir = os.path.join(l1a_out, "DataRelease\L1A_L1B")
         try:
-            shutil.copytree(l1a_out_dir, data_release_dir)
+            shutil.copytree(l1a_out_dir, os.path.join(data_release_dir, "L1A_L1B"), dirs_exist_ok=True)
         except Exception as ex:
             raise Exception("unable to copy {l1a_out_dir} to "
                 "{data_release_dir}") from ex
 
+        # The last 21 characters are the ones of the timestamp.
         l1a_file_for_pam = os.path.join(l1a_out,
-            f"{experiment_name}_inOutReferenceFile.mat")
+            f"{experiment_name[:-21]}_inOutReferenceFile.mat")
 
         try:
             shutil.copy2(l1a_file_for_pam, os.path.join(conf[Conf.BACKUP_DIR],
@@ -356,23 +361,23 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
 
     print("detecting the dates of the simulation")
     try:
-        year_month_format = re.compile("[0-9]{4}-[0-9]{2}")
-        day_format = re.compile("[0-9]{2}")
+        year_month_format = re.compile("^[0-9]{4}-[0-9]{2}$")
+        day_format = re.compile("^[0-9]{2}$")
         l1a_l1b_dir = os.path.join(data_release_dir, "L1A_L1B")
 
         year_month_list = sorted(os.listdir(l1a_l1b_dir))
-        if not all(year_month_format.match(year_month) for year_month in year_month_list):
+        if not all(year_month_format.search(year_month) for year_month in year_month_list):
             raise Exception("there are files which are not directories of year and month of the data")
         start_year_month = year_month_list[0]
         end_year_month = year_month_list[-1]
 
         start_days = sorted(os.listdir(os.path.join(l1a_l1b_dir, start_year_month)))
-        if not all(day_format.match(day) for day in start_days):
+        if not all(day_format.search(day) for day in start_days):
             raise Exception("there are files which are not named as days in {start_year_month}")
         start_day = start_days[0]
 
         end_days = sorted(os.listdir(os.path.join(l1a_l1b_dir, end_year_month)))
-        if not all(day_format.match(day) for day in end_days):
+        if not all(day_format.search(day) for day in end_days):
             raise Exception(f"there are files which are not named as days in {end_year_month}")
         end_day = end_days[-1]
 
@@ -499,7 +504,7 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
     ).replace("/", "\\")
     conf_vars = []
     for option in Conf:
-        i = option - 1
+        i = option
         tkinter.ttk.Label(settings_frame, text=CONF_NAMES[i]) \
             .grid(column=0, row=i, sticky="w", padx=".1c")
         var = tkinter.StringVar(root, conf[i])
@@ -513,7 +518,7 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
             else dir_dialog if kind == ConfKind.DIR \
             else None
         assert dialog, f"The ConfKind enumeration shall contain only EXE and" \
-            " DIR, it has instead {ConfKind.__members__}"
+            f" DIR, it has instead {ConfKind.__members__}"
         def closure(var=var, dialog=dialog, entry=entry):
             res = dialog()
             if res:
@@ -530,7 +535,7 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
                 " not on windows", file=sys.stderr)
             return
         res = [
-            f'\t"{option.name}": "{_escape_str(conf_vars[option - 1].get())}"'
+            f'\t"{option.name}": "{_escape_str(conf_vars[option].get())}"'
             for option in Conf
         ]
         res = "{\n" + ",\n".join(res) + "\n}"
@@ -608,6 +613,7 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
     )
     backup_entry.grid(column=2, row=1, columnspan=3, pady=".5c", sticky="w")
 
+    # FIXME: if we change end to L2FB start does not changes accordingly.
     def keep_ui_invariant(name1, name2, op):
         """https://tcl.tk/man/tcl8.5/TclCmd/trace.htm#M14"""
         start = Proc[start_var.get()]
@@ -617,15 +623,15 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
             case "start_var":
                 if start <= Proc.L1B:
                     if start > end:
-                        end_combobox.current(start-1)
+                        end_combobox.current(start)
                 else:
-                    end_combobox.current(start-1)
+                    end_combobox.current(start)
                 if start == Proc.L1A:
                     backup_var.set("")
             case "end_var":
                 if end <= Proc.L1B:
                     if start > end:
-                        start_combobox.current(end-1)
+                        start_combobox.current(end)
                 if end <= Proc.L1B:
                     pam_var.set(False)
             # Both the PAM checkbox and the backup entry shoulb be both cleared
@@ -645,14 +651,14 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
         assert start <= end
         # Logical implication i.e. (A -> B) is equivalent to (not A or B).
         assert not pam_var.get() or end > Proc.L1B
-        assert not backup_var.get() or start == Proc.L1A
+        assert not backup_var.get() or start != Proc.L1A
     start_var.trace_add("write", keep_ui_invariant)
     end_var.trace_add("write", keep_ui_invariant)
     pam_var.trace_add("write", keep_ui_invariant)
     backup_var.trace_add("write", keep_ui_invariant)
 
     def orchestrate_simulation():
-        conf = [conf_vars[option-1].get() for option in Conf]
+        conf = [conf_vars[option].get() for option in Conf]
         run(Proc[start_var.get()], Proc[end_var.get()], pam_var.get(),
             backup_var.get(), conf)
     run_button = tkinter.ttk.Button(
