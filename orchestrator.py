@@ -329,6 +329,8 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
                 f"L1A produced output in a non existing directory: {l1a_out}"
             )
 
+        experiment_name = list(filter(None, l1a_out.split("\\")))[-1]
+
         l1a_out_dir = os.path.join(l1a_out, "DataRelease\L1A_L1B")
         try:
             shutil.copytree(l1a_out_dir, data_release_dir)
@@ -336,11 +338,19 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
             raise Exception("unable to copy {l1a_out_dir} to "
                 "{data_release_dir}") from ex
 
-        # TODO: Finish this implementation
-        assert False, "not implemented I have to find the way in wich the file is named"
-        l1a_file_for_pam = f"{experiment_name}.mat"
+        l1a_file_for_pam = os.path.join(l1a_out,
+            f"{experiment_name}_inOutReferenceFile.mat")
 
-        experiment_name = list(filter(None, l1a_out.split("\\")))[-1]
+        try:
+            shutil.copy2(l1a_file_for_pam, os.path.join(conf[Conf.BACKUP_DIR],
+                f"PAM\\{experiment_name}.mat"))
+            shutil.copy2(l1a_file_for_pam, data_release_dir)
+        except Exception as ex:
+            raise Exception("unable to copy files for the PAM") from ex
+
+        if end == Proc.L1A:
+            do_backup_and_pam()
+            return
 
     assert experiment_name, "This variable should have been assigned by now"
 
