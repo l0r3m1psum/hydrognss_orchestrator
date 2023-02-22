@@ -224,6 +224,7 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
     # Logical implication i.e. (A -> B) is equivalent to (not A or B).
     assert not pam or end > Proc.L1B
     assert not backup or start != Proc.L1A
+    assert not (start > Proc.L1B or end > Proc.L1B) or start == end
     assert len(conf) == len(Conf)
 
     if os.name != "nt":
@@ -652,6 +653,7 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
         # Logical implication i.e. (A -> B) is equivalent to (not A or B).
         assert not pam_var.get() or end > Proc.L1B
         assert not backup_var.get() or start != Proc.L1A
+        assert not (start > Proc.L1B or end > Proc.L1B) or start == end
     start_var.trace_add("write", keep_ui_invariant)
     end_var.trace_add("write", keep_ui_invariant)
     pam_var.trace_add("write", keep_ui_invariant)
