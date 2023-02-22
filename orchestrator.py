@@ -224,7 +224,7 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
     # Logical implication i.e. (A -> B) is equivalent to (not A or B).
     assert not pam or end > Proc.L1B
     assert not backup or start != Proc.L1A
-    assert not (start > Proc.L1B or end > Proc.L1B) or start == end
+    assert not (start > Proc.L1B and end > Proc.L1B) or start == end
     assert len(conf) == len(Conf)
 
     if os.name != "nt":
@@ -624,7 +624,6 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
     )
     backup_entry.grid(column=2, row=1, columnspan=3, pady=".5c", sticky="w")
 
-    # FIXME: if we change end to L2FB start does not changes accordingly.
     def keep_ui_invariant(name1, name2, op):
         """https://tcl.tk/man/tcl8.5/TclCmd/trace.htm#M14"""
         start = Proc[start_var.get()]
@@ -642,6 +641,9 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
             case "end_var":
                 if end <= Proc.L1B:
                     if start > end:
+                        start_combobox.current(end)
+                else:
+                    if start > Proc.L1B:
                         start_combobox.current(end)
                 if end <= Proc.L1B:
                     pam_var.set(False)
@@ -663,7 +665,7 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
         # Logical implication i.e. (A -> B) is equivalent to (not A or B).
         assert not pam_var.get() or end > Proc.L1B
         assert not backup_var.get() or start != Proc.L1A
-        assert not (start > Proc.L1B or end > Proc.L1B) or start == end
+        assert not (start > Proc.L1B and end > Proc.L1B) or start == end
     start_var.trace_add("write", keep_ui_invariant)
     end_var.trace_add("write", keep_ui_invariant)
     pam_var.trace_add("write", keep_ui_invariant)
