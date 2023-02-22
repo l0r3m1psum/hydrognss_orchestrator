@@ -671,6 +671,9 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
     pam_var.trace_add("write", keep_ui_invariant)
     backup_var.trace_add("write", keep_ui_invariant)
 
+    # NOTE: right now the simulation is allowed to start even if start
+    #       != Proc.L1A and a backup file is not selected. This is done to allow
+    #       the users to do manual changes.
     def orchestrate_simulation():
         conf = [conf_vars[option].get() for option in Conf]
         run(Proc[start_var.get()], Proc[end_var.get()], pam_var.get(),
