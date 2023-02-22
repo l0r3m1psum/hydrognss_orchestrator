@@ -601,7 +601,7 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
         orchestrator_frame,
         text="Choose backup",
         command=lambda: (
-            backup_var.set(backup_dialog().replace("/", "\\")) # type: ignore
+            backup_var.set(backup_dialog()) # type: ignore
             or backup_entry.xview("end"))
     )
     backup_button.grid(column=0, row=1, columnspan=2, pady=".5c", sticky="e")
