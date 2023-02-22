@@ -1,3 +1,5 @@
+# This README is outdated.
+
 # e2es-orchestrator
 
 ## Prerequisites
