@@ -494,6 +494,15 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
     settings_frame.grid(column=0, row=0, padx=".5c", pady=".5c")
 
     # NOTE: shall I use tkinter.ttk.LabelFrame as Leila said?
+    # NOTE: It would be nice to set initialdir for all the exe_dialog so that it
+    #       makes the user select files starting from the proper direcotry. But
+    #       it would require a bit of messy code and there is no way to contrain
+    #       explorer.exe to a single directory. A possible way to force the user
+    #       to select just files in the directories of bin and scripts would be
+    #       to create a Listbox dialog that shows only the listing of the
+    #       directories bin and scripts. But again this would be messy.
+    # NOTE: Should I validate the directory structure of the selected
+    #       direcotries?
 
     exe_dialog = lambda: tkinter.filedialog.askopenfilename(
         parent=settings_toplevel,
@@ -595,6 +604,7 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
     backup_dialog = lambda: tkinter.filedialog.askopenfilename(
         parent=root,
         filetypes=[("ZIP Archive", ".zip")],
+        initialdir=conf_vars[Conf.BACKUP_DIR].get(),
         multiple=False # type: ignore
     ).replace("/", "\\")
     backup_button = tkinter.ttk.Button(
