@@ -53,6 +53,10 @@ class Conf(enum.IntEnum):
     L1B_WORK_DIR    = enum.auto()
     L1B_MM_EXE      = enum.auto()
     L1B_MM_WORK_DIR = enum.auto()
+    L1B_CX_EXE      = enum.auto()
+    L1B_CX_WORK_DIR = enum.auto()
+    L1B_CC_EXE      = enum.auto()
+    L1B_CC_WORK_DIR = enum.auto()
     L2FB_EXE        = enum.auto()
     L2FB_WORK_DIR   = enum.auto()
     L2FT_EXE        = enum.auto()
@@ -84,6 +88,10 @@ CONF_NAMES = [
     "L1B Working Dir.",
     "L1BMM Executable",
     "L1BMM Working Dir.",
+    "L1BCX Executable",
+    "L1BCX Working Dir.",
+    "L1BCC Executable",
+    "L1BCC Working Dir.",
     "L2FB Executable",
     "L2FB Working Dir.",
     "L2FT Executable",
@@ -116,6 +124,10 @@ CONF_KINDS = [
     ConfKind.DIR,
     ConfKind.EXE,
     ConfKind.DIR,
+    ConfKind.EXE,
+    ConfKind.DIR,
+    ConfKind.EXE,
+    ConfKind.DIR,
 ]
 assert len(CONF_KINDS) == len(Conf)
 
@@ -128,6 +140,10 @@ CONF_VALUES_DEFAULT = [
     "C:\\L1BOP\\scripts",
     "C:\\L1OP-MM\\scripts\\Run_L1Merge_with_dates.py",
     "C:\\L1OP-MM\\scripts",
+    "C:\\L1OP-CX\\bin\\L1B_CX_DR.exe",
+    "C:\\L1OP-CX\\bin",
+    "C:\\L1OP-CC\\bin\\L1B_CC_DR.exe",
+    "C:\\L1OP-CC\\bin",
     "C:\\L2FB\\bin\\L2OP_FB.exe",
     "C:\\L2FB\\bin",
     "C:\\L2FT\\bin\\L2PPFT_mainscript.exe",
@@ -401,13 +417,26 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
             conf[Conf.L1B_MM_EXE],
             f"{start_date} {end_date}"
         )
-        # TODO: do the rest of the L1B stuff
-        # Proc.L1B_CX_EXE
-        # Proc.L1B_CX_WORK_DIR
-        # Proc.L1B_CC_EXE
-        # Proc.L1B_CC_WORK_DIR
-        # Proc.L1B_MM_EXE
-        # Proc.L1B_MM_WORK_DIR
+        # TODO: setup this with Leila.
+        if False:
+            print("runnning L1B_CX")
+            run_processor(
+                conf[Conf.L1B_CX_WORK_DIR],
+                conf[Conf.L1B_CX_EXE],
+                f"-P {data_release_dir}"
+            )
+            print("runnning L1B_CC")
+            run_processor(
+                conf[Conf.L1B_CC_WORK_DIR],
+                conf[Conf.L1B_CC_EXE],
+                f"-P {data_release_dir}"
+            )
+            print("runnning L1B_MM again")
+            run_processor(
+                conf[Conf.L1B_MM_WORK_DIR],
+                conf[Conf.L1B_MM_EXE],
+                f"{start_date} {end_date}"
+            )
         if end == Proc.L1B:
             do_backup_and_pam()
             return
