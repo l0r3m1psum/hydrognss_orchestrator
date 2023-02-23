@@ -426,11 +426,15 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
                 f"-P {data_release_dir}"
             )
             print("runnning L1B_CC")
-            run_processor(
-                conf[Conf.L1B_CC_WORK_DIR],
-                conf[Conf.L1B_CC_EXE],
-                f"-P {data_release_dir}"
-            )
+            try:
+                run_processor(
+                    conf[Conf.L1B_CC_WORK_DIR],
+                    conf[Conf.L1B_CC_EXE],
+                    f"-P {data_release_dir}"
+                )
+            except Exception:
+                print("this processor failed but we allow the orchestrator to "
+                    "contine the execution as Gabrielle asked.")
             print("runnning L1B_MM again")
             run_processor(
                 conf[Conf.L1B_MM_WORK_DIR],
