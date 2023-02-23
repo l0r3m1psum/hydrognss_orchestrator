@@ -317,6 +317,8 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
         if experiment_name == backup:
             raise Exception("invalud backup file selected")
         print("loading the backup")
+        # TODO: do a partial validation of the contents of the archive like the
+        #       firts level of directories in data_release_dir.
         try:
             shutil.unpack_archive(backup, data_release_dir)
         except Exception as ex:
