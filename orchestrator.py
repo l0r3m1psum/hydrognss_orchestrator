@@ -549,7 +549,7 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
 
     exe_dialog = lambda: tkinter.filedialog.askopenfilename(
         parent=settings_toplevel,
-        filetypes=[("Executable", ".exe|.py"),],
+        filetypes=[("Executable", "*.exe *.py"),],
         multiple=False # type: ignore
     ).replace("/", "\\")
     dir_dialog = lambda: tkinter.filedialog.askdirectory(
