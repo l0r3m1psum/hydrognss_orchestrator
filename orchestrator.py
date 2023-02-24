@@ -11,6 +11,14 @@ them following this two URLs below.
 https://docs.python.org/3/reference/expressions.html#boolean-operations
 https://docs.python.org/3/reference/compound_stmts.html#function-definitions
 
+On some installations of tkinter, like the one on Windows Server 2019, the
+arguments passed to its functions, which are supposed to be integers, are
+converted to strings in the function (on macOS Ventura and Windows 10 this does
+not happen). This creates problem if you pass as aguments instances of
+enum.IntEnum, because its __str__ method is different from the one of int. To
+solve this always use the .value attribute of enum.IntEnum when passing its
+instances to tkinter functions.
+
 This module suffers from time-of-check to time-of-use "vulnerabilities", and
 various it file system atomicity problems, it expects to be the only one to
 operate on the various files and directories. Solving this problem is hard and
@@ -551,12 +559,12 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
     for option in Conf:
         i = option
         tkinter.ttk.Label(settings_frame, text=CONF_NAMES[i]) \
-            .grid(column=0, row=i, sticky="w", padx=".1c")
+            .grid(column=0, row=i.value, sticky="w", padx=".1c")
         var = tkinter.StringVar(root, conf[i])
         conf_vars.append(var)
         entry = tkinter.ttk.Entry(settings_frame, textvariable=var,
             state="readonly", width=40)
-        entry.grid(column=1, row=i, padx=".1c")
+        entry.grid(column=1, row=i.value, padx=".1c")
         entry.xview("end")
         kind = CONF_KINDS[i]
         dialog = exe_dialog if kind == ConfKind.EXE \
@@ -570,7 +578,7 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
                 var.set(res)
             entry.xview("end")
         tkinter.ttk.Button(settings_frame, text="Browse", command=closure) \
-            .grid(column=2, row=i)
+            .grid(column=2, row=i.value)
     del var, entry, kind, dialog
     assert len(conf_vars) == len(Conf)
 
@@ -668,18 +676,18 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
             case "start_var":
                 if start <= Proc.L1B:
                     if start > end:
-                        end_combobox.current(start)
+                        end_combobox.current(start.value)
                 else:
-                    end_combobox.current(start)
+                    end_combobox.current(start.value)
                 if start == Proc.L1A:
                     backup_var.set("")
             case "end_var":
                 if end <= Proc.L1B:
                     if start > end:
-                        start_combobox.current(end)
+                        start_combobox.current(end.value)
                 else:
                     if start > Proc.L1B:
-                        start_combobox.current(end)
+                        start_combobox.current(end.value)
                 if end <= Proc.L1B:
                     pam_var.set(False)
             # Both the PAM checkbox and the backup entry shoulb be both cleared
