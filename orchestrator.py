@@ -166,6 +166,49 @@ CONF_VALUES_DEFAULT = [
 ]
 assert len(CONF_VALUES_DEFAULT) == len(Conf)
 
+PROCESSORS_SUBDIRS = [
+    "bin", "conf", "doc", "log", "scripts", "src", "temp", "tests",
+]
+
+# This are the subdirectories that must be in each directory of the
+# configuration options.
+CONF_SUBDIRS: list[typing.Optional[list[str]]] = [
+    ["PAM",],
+    ["Auxiliary_Data", "ConfigurationFiles", "DataRelease"],
+    None,
+    [], # PROCESSORS_SUBDIRS,
+    None,
+    [], # PROCESSORS_SUBDIRS,
+    None,
+    [], # PROCESSORS_SUBDIRS,
+    None,
+    [], # PROCESSORS_SUBDIRS,
+    None,
+    [], # PROCESSORS_SUBDIRS,
+    None,
+    [], # PROCESSORS_SUBDIRS,
+    None,
+    [], # PROCESSORS_SUBDIRS,
+    None,
+    [], # PROCESSORS_SUBDIRS,
+    None,
+    [], # PROCESSORS_SUBDIRS,
+    None,
+    [], # PROCESSORS_SUBDIRS,
+]
+assert len(CONF_SUBDIRS) == len(Conf)
+# A iff B = A and B or not A and not B
+assert all(
+    subdirs is None and kind == ConfKind.EXE
+    or subdirs is not None and kind != ConfKind.EXE
+    for subdirs, kind in zip(CONF_SUBDIRS, CONF_KINDS)
+), "subdir is not different from None iff kind is not EXE"
+assert all(
+    type(subdirs) == list and kind == ConfKind.DIR
+    or type(subdirs) != list and kind != ConfKind.DIR
+    for subdirs, kind in zip(CONF_SUBDIRS, CONF_KINDS)
+), "subdir is not a list iff kind is DIR"
+
 # %LOCALAPPDATA% can be modified for just this program by running python in the
 # following way: cmd /V /C "set LOCALAPPDATA=... && py ..."
 config_options_file_path = os.path.expandvars(os.path.join(
@@ -256,6 +299,18 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
     if os.name != "nt":
         print("skipping the run because we are not on windows", file=sys.stderr)
         return
+
+    for option in Conf:
+        subdirs = CONF_SUBDIRS[option]
+        if not subdirs:
+            continue
+        for subdir in subdirs:
+            assert CONF_KINDS[option] == ConfKind.DIR
+            subdir_path = os.path.join(conf[option], subdir)
+            if not os.path.exists(subdir_path):
+                # NOTE: Should I use an actual logger at this point.
+                print(f"warning: {conf[option]} does not contain {subdir} as a "
+                    f"directory", file=sys.stderr)
 
     data_dir = conf[Conf.DATA_DIR]
     data_release_dir = os.path.join(data_dir, "DataRelease")
