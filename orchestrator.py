@@ -88,8 +88,8 @@ PROC_NAMES_PAM = ["L1_A", "L1_B", "L2_FB", "L2_FT", "L2_SI", "L2_SM",]
 assert len(Proc) == len(PROC_NAMES_PAM)
 
 CONF_NAMES = [
-    "Data Directory",
     "Backup Directory",
+    "Data Directory",
     "L1A Executable",
     "L1A Working Dir.",
     "L1B Executable",
