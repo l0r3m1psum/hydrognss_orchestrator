@@ -269,7 +269,7 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
         try:
             os.chdir(working_dir)
         except OSError as ex:
-            raise Exception("unable to move to {working_dir} for {file_path}") \
+            raise Exception(f"unable to move to {working_dir} for {file_path}") \
                 from ex
 
         exe = file_path if file_path.endswith(".exe") \
@@ -288,8 +288,8 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
         try:
             os.chdir(original_working_dir)
         except OSError as ex:
-            raise Exception("unable to go back to {original_working_dir} for "
-                "{file_path}") from ex
+            raise Exception(f"unable to go back to {original_working_dir} for "
+                f"{file_path}") from ex
 
     def do_backup_and_pam():
         timestamp = f"{int(time.time())}"
