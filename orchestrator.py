@@ -427,30 +427,28 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
             conf[Conf.L1B_MM_EXE],
             f"{start_date} {end_date}"
         )
-        # TODO: setup this with Leila.
-        if False:
-            print("runnning L1B_CX")
+        print("runnning L1B_CX")
+        run_processor(
+            conf[Conf.L1B_CX_WORK_DIR],
+            conf[Conf.L1B_CX_EXE],
+            f"-P {data_release_dir}"
+        )
+        print("runnning L1B_CC")
+        try:
             run_processor(
-                conf[Conf.L1B_CX_WORK_DIR],
-                conf[Conf.L1B_CX_EXE],
+                conf[Conf.L1B_CC_WORK_DIR],
+                conf[Conf.L1B_CC_EXE],
                 f"-P {data_release_dir}"
             )
-            print("runnning L1B_CC")
-            try:
-                run_processor(
-                    conf[Conf.L1B_CC_WORK_DIR],
-                    conf[Conf.L1B_CC_EXE],
-                    f"-P {data_release_dir}"
-                )
-            except Exception:
-                print("this processor failed but we allow the orchestrator to "
-                    "contine the execution as Gabrielle asked.")
-            print("runnning L1B_MM again")
-            run_processor(
-                conf[Conf.L1B_MM_WORK_DIR],
-                conf[Conf.L1B_MM_EXE],
-                f"{start_date} {end_date}"
-            )
+        except Exception:
+            print("this processor failed but we allow the orchestrator to "
+                "contine the execution as Gabrielle asked.")
+        print("runnning L1B_MM again")
+        run_processor(
+            conf[Conf.L1B_MM_WORK_DIR],
+            conf[Conf.L1B_MM_EXE],
+            f"{start_date} {end_date}"
+        )
         if end == Proc.L1B:
             do_backup_and_pam()
             return
