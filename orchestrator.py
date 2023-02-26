@@ -654,6 +654,7 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
         parent=root,
         filetypes=[("ZIP Archive", ".zip")],
         initialdir=conf_vars[Conf.BACKUP_DIR].get(),
+        title="Select a backup file",
         multiple=False # type: ignore
     ).replace("/", "\\")
     backup_button = tkinter.ttk.Button(
