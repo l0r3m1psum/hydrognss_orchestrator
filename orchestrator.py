@@ -36,6 +36,7 @@ import time
 import tkinter
 import tkinter.filedialog
 import tkinter.ttk
+import traceback
 import typing
 
 # We do not know if this is really needed for high DPI screens.
@@ -728,8 +729,12 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
     #       the users to do manual changes.
     def orchestrate_simulation():
         conf = [conf_vars[option].get() for option in Conf]
-        run(Proc[start_var.get()], Proc[end_var.get()], pam_var.get(),
-            backup_var.get(), conf)
+        try:
+            run(Proc[start_var.get()], Proc[end_var.get()], pam_var.get(),
+                backup_var.get(), conf)
+        except Exception as ex:
+            print("the orchestration encoutered a problem: ", file=sys.stderr)
+            traceback.print_exception(type(ex), ex, ex.__traceback__)
     run_button = tkinter.ttk.Button(
         orchestrator_frame,
         text="Run!",
