@@ -202,6 +202,7 @@ def read_or_create_config_file() -> typing.Optional[list[str]]:
                         file=sys.stderr)
                     return None
 
+                # TODO: here I should change just the ones that don't exist.
                 if not all(os.path.exists(value) for value in res.values()):
                     print("all the values is the config file shall be existing "
                         "paths, loading the default config instead",
@@ -553,6 +554,7 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
     # NOTE: Should I validate the directory structure of the selected
     #       direcotries?
 
+    # TODO: add a title to this dialogs.
     exe_dialog = lambda: tkinter.filedialog.askopenfilename(
         parent=settings_toplevel,
         filetypes=[("Executable", "*.exe *.py"),],
@@ -747,6 +749,8 @@ def _main() -> int:
     if os.name != "nt":
         print("os not supported, some things are not going to work but the GUI "
             "will show up", file=sys.stderr)
+
+    # NOTE: should I add support for CLI?
 
     conf = read_or_create_config_file()
     if not conf:
