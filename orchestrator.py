@@ -547,7 +547,7 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
             run_processor(
                 conf[Conf.L2SM_WORK_DIR],
                 conf[Conf.L2SM_EXE],
-                f"{data_dir} {start_day} {end_date} 1 25 L1 L"
+                f"-input {data_dir} {start_date} {end_date} 1 25 L1 L"
             )
             do_backup_and_pam()
             return
