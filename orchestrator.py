@@ -200,6 +200,7 @@ CONF_SUBDIRS: list[typing.Optional[list[str]]] = [
 ]
 assert len(CONF_SUBDIRS) == len(Conf)
 # A iff B = A and B or not A and not B
+# TODO: iff can be represented with bool(A) == bool(B)
 assert all(
     subdirs is None and kind == ConfKind.EXE
     or subdirs is not None and kind != ConfKind.EXE
@@ -342,6 +343,7 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
                 f"{file_path} is not supported")
 
         # We expect %COMSPEC% to be cmd.exe or something like that.
+        # TODO: use subprocess module and log output to file
         res = os.system(f"{exe} {arguments}")
         if res != 0:
              raise Exception(f"{file_path} exited with error code {res}")
