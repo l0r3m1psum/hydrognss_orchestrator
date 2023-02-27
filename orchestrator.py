@@ -166,6 +166,8 @@ CONF_VALUES_DEFAULT = [
 ]
 assert len(CONF_VALUES_DEFAULT) == len(Conf)
 
+# TODO: add a list for the processors' dialog titles.
+
 PROCESSORS_SUBDIRS = [
     "bin", "conf", "doc", "log", "scripts", "src", "temp", "tests",
 ]
@@ -299,6 +301,9 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
     if os.name != "nt":
         print("skipping the run because we are not on windows", file=sys.stderr)
         return
+
+    # TODO: put all check here so that the UI does not have to be so strict
+    #       about many things.
 
     for option in Conf:
         subdirs = CONF_SUBDIRS[option]
