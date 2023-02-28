@@ -385,7 +385,7 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
         os.mkdir(os.path.join(data_release_dir, "L2OP-FB"))
         os.mkdir(os.path.join(data_release_dir, "L2OP-FT"))
         os.mkdir(os.path.join(data_release_dir, "L2OP-SI"))
-        os.mkdir(os.path.join(data_release_dir, "L2OP-SM"))
+        os.mkdir(os.path.join(data_release_dir, "L2OP-SSM"))
         os.mkdir(os.path.join(data_release_dir, "L1A-SW-RX"))
         os.mkdir(os.path.join(data_release_dir, "L2-FDI"))
     except Exception as ex:
@@ -557,8 +557,8 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
             print("runnning L2SI")
             l2si_dir = os.path.join(auxiliary_data_dir, "L2OP-SI")
             run_processor(
-                conf[Conf.L2SM_WORK_DIR],
-                conf[Conf.L2SM_EXE],
+                conf[Conf.L2SI_WORK_DIR],
+                conf[Conf.L2SI_EXE],
                 f"-P {data_release_dir} -M {l2si_dir}"
             )
             do_backup_and_pam()
