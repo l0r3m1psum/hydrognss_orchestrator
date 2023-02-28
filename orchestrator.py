@@ -222,6 +222,7 @@ def _escape_str(s: str) -> str:
     # f"{s!r}"[2:-2]
     return s.encode("unicode_escape").decode("utf-8")
 
+# TODO: In case a path is not correct we should use the empty string
 def read_or_create_config_file() -> typing.Optional[list[str]]:
     """As the name suggests this function reads the configuration file (or
     creates it if it does not exists) and then return it to you. If None is
@@ -566,6 +567,8 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
         case other:
             assert False
 
+# TODO: add Checkbox for not deleting the DataRelease folder in the begining,
+#       this is needed for quick retry after error.
 def gui(root: tkinter.Tk, conf: list[str]) -> None:
     """This function creates a user friendly GUI to operate the orchestrator.
 
@@ -618,6 +621,7 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
     #       direcotries?
 
     # TODO: add a title to this dialogs.
+    # TODO: this should always start from C:
     exe_dialog = lambda: tkinter.filedialog.askopenfilename(
         parent=settings_toplevel,
         filetypes=[("Executable", "*.exe *.py"),],
