@@ -175,7 +175,7 @@ PROCESSORS_SUBDIRS = [
 # This are the subdirectories that must be in each directory of the
 # configuration options.
 CONF_SUBDIRS: list[typing.Optional[list[str]]] = [
-    ["PAM",],
+    ["PAM", "PAM_Output"],
     ["Auxiliary_Data", "ConfigurationFiles", "DataRelease"],
     None,
     [], # PROCESSORS_SUBDIRS,
