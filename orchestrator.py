@@ -378,6 +378,7 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
                 f"{PROC_NAMES_PAM[end]} {auxiliary_data_dir} "
                 f"{conf[Conf.BACKUP_DIR]} {backup_name}"
             )
+            # TODO: add backup\PAM_Output to the backup.
         print("orchestration finished\a")
 
     if clean:
@@ -396,6 +397,9 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
         except Exception as ex:
             raise Exception("unable to create the directory structure") from ex
     else:
+        # This should be an illegal file/path in all OSes.
+        experiment_name = '\0/<>:"\\?* the exeriment does not exists because ' \
+            'the clean option was not selected'
         print("keeping the data release direcotory of the previous execution")
 
     if backup:
