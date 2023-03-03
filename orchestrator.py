@@ -27,6 +27,7 @@ not tackle it.
 """
 
 import enum
+import idlelib.tooltip # type: ignore
 import json
 import os
 import re
@@ -288,15 +289,17 @@ def read_or_create_config_file() -> typing.Optional[list[str]]:
 
     return True
 
-def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None:
+def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[str]) -> None:
     """If anything goes wrong this function throws an exception with an
-    explenation of what went wrong, the directories structure may be left in a
-    invalid state."""
+    explenation of what went wrong."""
 
     assert start <= end
     # Logical implication i.e. (A -> B) is equivalent to (not A or B).
-    assert not pam or end > Proc.L1B
-    assert not backup or start != Proc.L1A
+    assert not pam or end > Proc.L1B, "if pam is enabled then the processor should one of the L2"
+    # TODO: check that start != L1A iff not clean or backup.
+    assert not backup or start != Proc.L1A, "if a backup file is to be restored then the starting processor should not be L1A"
+    assert not clean or not backup, "if clean is enabled then no backup file should be selected"
+    assert not backup or clean, "if a backup file has been specified then clean should be enable"
     assert not (start > Proc.L1B and end > Proc.L1B) or start == end
     assert len(conf) == len(Conf)
 
@@ -377,20 +380,23 @@ def run(start: Proc, end: Proc, pam: bool, backup: str, conf: list[str]) -> None
             )
         print("orchestration finished\a")
 
-    print("cleaning up from previous execution")
-    if os.path.exists(data_release_dir):
-        shutil.rmtree(data_release_dir)
-    try:
-        os.mkdir(data_release_dir)
-        os.mkdir(os.path.join(data_release_dir, "L1A_L1B"))
-        os.mkdir(os.path.join(data_release_dir, "L2OP-FB"))
-        os.mkdir(os.path.join(data_release_dir, "L2OP-FT"))
-        os.mkdir(os.path.join(data_release_dir, "L2OP-SI"))
-        os.mkdir(os.path.join(data_release_dir, "L2OP-SSM"))
-        os.mkdir(os.path.join(data_release_dir, "L1A-SW-RX"))
-        os.mkdir(os.path.join(data_release_dir, "L2-FDI"))
-    except Exception as ex:
-        raise Exception("unable to create the directory structure") from ex
+    if clean:
+        print("cleaning up from previous execution")
+        if os.path.exists(data_release_dir):
+            shutil.rmtree(data_release_dir)
+        try:
+            os.mkdir(data_release_dir)
+            os.mkdir(os.path.join(data_release_dir, "L1A_L1B"))
+            os.mkdir(os.path.join(data_release_dir, "L2OP-FB"))
+            os.mkdir(os.path.join(data_release_dir, "L2OP-FT"))
+            os.mkdir(os.path.join(data_release_dir, "L2OP-SI"))
+            os.mkdir(os.path.join(data_release_dir, "L2OP-SSM"))
+            os.mkdir(os.path.join(data_release_dir, "L1A-SW-RX"))
+            os.mkdir(os.path.join(data_release_dir, "L2-FDI"))
+        except Exception as ex:
+            raise Exception("unable to create the directory structure") from ex
+    else:
+        print("keeping the data release direcotory of the previous execution")
 
     if backup:
         backup_name_format = re.compile("_[0-9]{10}\.zip$")
@@ -743,6 +749,20 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
     )
     backup_entry.grid(column=2, row=1, columnspan=3, pady=".5c", sticky="w")
 
+    clean_var = tkinter.BooleanVar(root, True, "clean_var")
+    clean_checkbutton = tkinter.ttk.Checkbutton(
+        orchestrator_frame,
+        text="Clean",
+        variable=clean_var,
+        onvalue=True,
+        offvalue=False
+    )
+    clean_checkbutton.grid(column=5, row=1)
+    clean_tooltip = idlelib.tooltip.Hovertip(clean_checkbutton,
+        "If you do not want to do some\n"
+        "debugging keep this checked,\n"
+        "unless you choose a backup file.")
+
     def keep_ui_invariant(name1, name2, op):
         """https://tcl.tk/man/tcl8.5/TclCmd/trace.htm#M14"""
         start = Proc[start_var.get()]
@@ -775,20 +795,18 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
             case "backup_var":
                 if start == Proc.L1A:
                     backup_var.set("")
+                if backup_var.get():
+                    clean_var.set(False)
+            case "clean_var":
+                if backup_var.get():
+                    clean_var.set(False)
             case other:
                 assert False
-
-        start = Proc[start_var.get()]
-        end = Proc[end_var.get()]
-        assert start <= end
-        # Logical implication i.e. (A -> B) is equivalent to (not A or B).
-        assert not pam_var.get() or end > Proc.L1B
-        assert not backup_var.get() or start != Proc.L1A
-        assert not (start > Proc.L1B and end > Proc.L1B) or start == end
     start_var.trace_add("write", keep_ui_invariant)
     end_var.trace_add("write", keep_ui_invariant)
     pam_var.trace_add("write", keep_ui_invariant)
     backup_var.trace_add("write", keep_ui_invariant)
+    clean_var.trace_add("write", keep_ui_invariant)
 
     # NOTE: right now the simulation is allowed to start even if start
     #       != Proc.L1A and a backup file is not selected. This is done to allow
@@ -796,8 +814,14 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
     def orchestrate_simulation():
         conf = [conf_vars[option].get() for option in Conf]
         try:
-            run(Proc[start_var.get()], Proc[end_var.get()], pam_var.get(),
-                backup_var.get(), conf)
+            run(
+                start=Proc[start_var.get()],
+                end=Proc[end_var.get()],
+                pam=pam_var.get(),
+                clean=clean_var.get(),
+                backup=backup_var.get(),
+                conf=conf
+            )
         except Exception as ex:
             print("the orchestration encoutered a problem: ", file=sys.stderr)
             traceback.print_exception(type(ex), ex, ex.__traceback__)
