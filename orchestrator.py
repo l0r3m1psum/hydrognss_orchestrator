@@ -39,6 +39,7 @@ import tkinter.filedialog
 import tkinter.ttk
 import traceback
 import typing
+import zipfile
 
 # We do not know if this is really needed for high DPI screens.
 # import ctypes
@@ -176,7 +177,7 @@ PROCESSORS_SUBDIRS = [
 # This are the subdirectories that must be in each directory of the
 # configuration options.
 CONF_SUBDIRS: list[typing.Optional[list[str]]] = [
-    ["PAM", "PAM_Output"],
+    ["PAM"],
     ["Auxiliary_Data", "ConfigurationFiles", "DataRelease"],
     None,
     [], # PROCESSORS_SUBDIRS,
@@ -363,11 +364,10 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
         assert len(timestamp) == 10
         assert experiment_name
         backup_name = f"{experiment_name}_{timestamp}"
+        backup_path_noext = os.path.join(conf[Conf.BACKUP_DIR], backup_name)
         print("doing the backup")
         try:
-            shutil.make_archive(
-                os.path.join(conf[Conf.BACKUP_DIR], backup_name),
-                "zip", data_release_dir)
+            shutil.make_archive(backup_path_noext, "zip", data_release_dir)
         except Exception as ex:
             raise Exception("unable to make backup archive") from ex
         if pam:
@@ -378,7 +378,20 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
                 f"{PROC_NAMES_PAM[end]} {auxiliary_data_dir} "
                 f"{conf[Conf.BACKUP_DIR]} {backup_name}"
             )
-            # TODO: add backup\PAM_Output to the backup.
+
+            pam_output = os.path.join(conf[Conf.BACKUP_DIR], "PAM_Output")
+            try:
+                with zipfile.ZipFile(f"{backup_path_noext}.zip", 'a') as zipf:
+                    for file in os.listdir(pam_output):
+                        file_path = os.path.join(pam_output, file)
+                        zipf.write(file_path, f"PAM_Output\\{file}")
+            except Exception as ex:
+                raise Exception("unable to add the PAM output figures to the "
+                    "backup") from ex
+            try:
+                shutil.rmtree(pam_output)
+            except Exception as ex:
+                raise Exception("unable to delete {pam_output}") from ex
         print("orchestration finished\a")
 
     if clean:
@@ -402,7 +415,7 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
                 experiment_name = f.read().strip() # TODO: validate
         except Exception as ex:
             raise Exception("unable to read the experiment name from the file") from ex
-        print("keeping the data release direcotory of the previous execution")
+        print("keeping the data release directory of the previous execution")
 
     if backup:
         assert clean
@@ -446,7 +459,7 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
         experiment_name_format = re.compile("_[0-9]{2}-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-[0-9]{4}_[0-9]{2}_[0-9]{2}_[0-9]{2}$")
         experiment_name = list(filter(None, l1a_out.split("\\")))[-1]
         if not experiment_name_format.search(experiment_name):
-            raise Exception("the L1A output direcotory has not the correct format")
+            raise Exception("the L1A output directory has not the correct format")
 
         # This is needed for when clean == False, so that the PAM can read the
         # appropriate file from the PAM directory in the backup folder.
@@ -588,8 +601,6 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
         case other:
             assert False
 
-# TODO: add Checkbox for not deleting the DataRelease folder in the begining,
-#       this is needed for quick retry after error.
 def gui(root: tkinter.Tk, conf: list[str]) -> None:
     """This function creates a user friendly GUI to operate the orchestrator.
 
@@ -642,7 +653,7 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
     #       direcotries?
 
     # TODO: add a title to this dialogs.
-    # TODO: this should always start from C:
+    # TODO: initialdir="C:" %HOMEDRIVE%
     exe_dialog = lambda: tkinter.filedialog.askopenfilename(
         parent=settings_toplevel,
         filetypes=[("Executable", "*.exe *.py"),],
@@ -801,7 +812,7 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
                         start_combobox.current(end.value)
                 if end <= Proc.L1B:
                     pam_var.set(False)
-            # Both the PAM checkbox and the backup entry shoulb be both cleared
+            # Both the PAM checkbox and the backup entry should be both cleared
             # and disabled if are not valid to input and enabled otherwise. This
             # is a more crude approach that is slightly simpler to implement.
             case "pam_var":
