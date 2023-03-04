@@ -399,7 +399,7 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
     else:
         try:
             with open(os.path.join(data_release_dir, "experiment_name.txt")) as f:
-                experiment_name = f.read.strip() # TODO: validate
+                experiment_name = f.read().strip() # TODO: validate
         except Exception as ex:
             raise Exception("unable to read the experiment name from the file") from ex
         print("keeping the data release direcotory of the previous execution")
