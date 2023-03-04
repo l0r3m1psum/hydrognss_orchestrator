@@ -397,9 +397,7 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
         except Exception as ex:
             raise Exception("unable to create the directory structure") from ex
     else:
-        # This should be an illegal file/path in all OSes.
-        experiment_name = '\0/<>:"\\?* the exeriment does not exists because ' \
-            'the clean option was not selected'
+        experiment_name = f"debug_not_cleaned"
         print("keeping the data release direcotory of the previous execution")
 
     if backup:
