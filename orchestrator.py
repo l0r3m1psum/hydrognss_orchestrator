@@ -397,10 +397,15 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
         except Exception as ex:
             raise Exception("unable to create the directory structure") from ex
     else:
-        experiment_name = f"debug_not_cleaned"
+        try:
+            with open(os.path.join(data_release_dir, "experiment_name.txt")) as f:
+                experiment_name = f.read.strip() # TODO: validate
+        except Exception as ex:
+            raise Exception("unable to read the experiment name from the file") from ex
         print("keeping the data release direcotory of the previous execution")
 
     if backup:
+        assert clean
         backup_name_format = re.compile("_[0-9]{10}\.zip$")
         experiment_name = backup_name_format.sub("", backup).split("\\")[-1]
         if experiment_name == backup:
@@ -442,6 +447,14 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
         experiment_name = list(filter(None, l1a_out.split("\\")))[-1]
         if not experiment_name_format.search(experiment_name):
             raise Exception("the L1A output direcotory has not the correct format")
+
+        # This is needed for when clean == False, so that the PAM can read the
+        # appropriate file from the PAM directory in the backup folder.
+        try:
+            with open(os.path.join(data_release_dir, "experiment_name.txt"), 'w') as f:
+                f.write(experiment_name)
+        except Exception as ex:
+            raise Exception("unable to write the experiment name in the file") from ex
 
         l1a_out_dir = os.path.join(l1a_out, "DataRelease\L1A_L1B")
         try:
