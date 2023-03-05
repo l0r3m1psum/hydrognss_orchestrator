@@ -168,7 +168,31 @@ CONF_VALUES_DEFAULT = [
 ]
 assert len(CONF_VALUES_DEFAULT) == len(Conf)
 
-# TODO: add a list for the processors' dialog titles.
+CONF_DIALOG_TITLES = [
+    "Choose the backup directory",
+    "Choose the main input output directory",
+    "Choose the L1A executable",
+    "Choose the L1A working directory",
+    "Choose the L1B executable",
+    "Choose the L1B working directory",
+    "Choose the L1B merge module executable",
+    "Choose the L1B merge module working directory",
+    "Choose the L1B CX executable",
+    "Choose the L1B CX working directory",
+    "Choose the L1B CC executable",
+    "Choose the L1B CC working directory",
+    "Choose the L2FB executable",
+    "Choose the L2FB working directory",
+    "Choose the L2FT executable",
+    "Choose the L2FT working directory",
+    "Choose the L2SI executable",
+    "Choose the L2SI working directory",
+    "Choose the L2SM executable",
+    "Choose the L2SM working directory",
+    "Choose the PAM executable",
+    "Choose the PAM working directory",
+]
+assert len(CONF_DIALOG_TITLES) == len(Conf)
 
 PROCESSORS_SUBDIRS = [
     "bin", "conf", "doc", "log", "scripts", "src", "temp", "tests",
@@ -213,6 +237,8 @@ assert all(
     or type(subdirs) != list and kind != ConfKind.DIR
     for subdirs, kind in zip(CONF_SUBDIRS, CONF_KINDS)
 ), "subdir is not a list iff kind is DIR"
+
+home_drive = os.path.expandvars("%HOMEDRIVE%")
 
 # %LOCALAPPDATA% can be modified for just this program by running python in the
 # following way: cmd /V /C "set LOCALAPPDATA=... && py ..."
@@ -652,15 +678,17 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
     # NOTE: Should I validate the directory structure of the selected
     #       direcotries?
 
-    # TODO: add a title to this dialogs.
-    # TODO: initialdir="C:" %HOMEDRIVE%
-    exe_dialog = lambda: tkinter.filedialog.askopenfilename(
+    exe_dialog = lambda option: tkinter.filedialog.askopenfilename(
         parent=settings_toplevel,
         filetypes=[("Executable", "*.exe *.py"),],
+        title=CONF_DIALOG_TITLES[option],
+        initialdir=home_drive,
         multiple=False # type: ignore
     ).replace("/", "\\")
-    dir_dialog = lambda: tkinter.filedialog.askdirectory(
-        parent=settings_toplevel
+    dir_dialog = lambda option: tkinter.filedialog.askdirectory(
+        parent=settings_toplevel,
+        title=CONF_DIALOG_TITLES[option],
+        initialdir=home_drive
     ).replace("/", "\\")
     conf_vars = []
     for option in Conf:
@@ -679,8 +707,8 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
             else None
         assert dialog, f"The ConfKind enumeration shall contain only EXE and" \
             f" DIR, it has instead {ConfKind.__members__}"
-        def closure(var=var, dialog=dialog, entry=entry):
-            res = dialog()
+        def closure(var=var, dialog=dialog, entry=entry, option=option):
+            res = dialog(option)
             if res:
                 var.set(res)
             entry.xview("end")
