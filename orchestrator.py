@@ -1,6 +1,5 @@
 """This module contains the code for the GUI and the logic to operate and run
-the orchestrator. This two functionalities are provided in the only three
-exported functions i.e. gui(), run() and read_or_create_config_file().
+the orchestrator.
 
 In the code we made use of two lesser known Python functionalities to make the
 code more succint. This two functionalities are the way in which the boolean
@@ -90,6 +89,7 @@ PROC_NAMES = list(Proc.__members__)
 PROC_NAMES_PAM = ["L1_A", "L1_B", "L2_FB", "L2_FT", "L2_SI", "L2_SM",]
 assert len(Proc) == len(PROC_NAMES_PAM)
 
+# Names of the configuration options to be displayed in the GUI.
 CONF_NAMES = [
     "Backup Directory",
     "Data Directory",
@@ -116,6 +116,7 @@ CONF_NAMES = [
 ]
 assert len(CONF_NAMES) == len(Conf)
 
+# What kind of path the configuration options want.
 CONF_KINDS = [
     ConfKind.DIR,
     ConfKind.DIR,
