@@ -275,7 +275,7 @@ def validate_orchestrator_arguments(start: Proc, end: Proc, pam: bool, clean: bo
 
     return True
 
-def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[str]) -> None:
+def run(logger: logging.Logger, start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[str]) -> None:
     """If anything goes wrong this function throws an exception with an
     explenation of what went wrong."""
 
@@ -285,7 +285,7 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
         raise ValueError("the orchestration was started with invalid arguments")
 
     if os.name != "nt":
-        print("skipping the run because we are not on windows", file=sys.stderr)
+        logger.info("skipping the run because we are not on windows")
         return
 
     # TODO: check that all path in conf exist and are of the right kind
@@ -300,8 +300,8 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
             subdir_path = os.path.join(conf[option], subdir)
             if not os.path.exists(subdir_path):
                 # NOTE: Should I use an actual logger at this point.
-                print(f"warning: {conf[option]} does not contain {subdir} as a "
-                    f"directory", file=sys.stderr)
+                logger.warning(f"{conf[option]} does not contain {subdir} as a "
+                    f"directory")
 
     data_dir = conf[Conf.DATA_DIR]
     data_release_dir = os.path.join(data_dir, "DataRelease")
@@ -345,13 +345,13 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
         assert experiment_name
         backup_name = f"{experiment_name}_{timestamp}"
         backup_path_noext = os.path.join(conf[Conf.BACKUP_DIR], backup_name)
-        print("doing the backup")
+        logger.info("doing the backup")
         try:
             shutil.make_archive(backup_path_noext, "zip", data_release_dir)
         except Exception as ex:
             raise Exception("unable to make backup archive") from ex
         if pam:
-            print("running the PAM")
+            logger.info("running the PAM")
             run_processor(
                 conf[Conf.PAM_WORK_DIR],
                 conf[Conf.PAM_EXE],
@@ -372,10 +372,10 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
                 shutil.rmtree(pam_output)
             except Exception as ex:
                 raise Exception("unable to delete {pam_output}") from ex
-        print("orchestration finished\a")
+        logger.info("orchestration finished\a")
 
     if clean:
-        print("cleaning up from previous execution")
+        logger.info("cleaning up from previous execution")
         if os.path.exists(data_release_dir):
             shutil.rmtree(data_release_dir)
         try:
@@ -395,7 +395,7 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
                 experiment_name = f.read().strip() # TODO: validate
         except Exception as ex:
             raise Exception("unable to read the experiment name from the file") from ex
-        print("keeping the data release directory of the previous execution")
+        logger.info("keeping the data release directory of the previous execution")
 
     if backup:
         assert clean
@@ -403,7 +403,7 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
         experiment_name = backup_name_format.sub("", backup).split("\\")[-1]
         if experiment_name == backup:
             raise Exception("invalud backup file selected")
-        print("loading the backup")
+        logger.info("loading the backup")
         # TODO: do a partial validation of the contents of the archive like the
         #       firts level of directories in data_release_dir (ZipFile.getinfo()).
         try:
@@ -414,7 +414,7 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
     # The actual "orchestration" starts here.
 
     if start == Proc.L1A:
-        print("runnning L1A")
+        logger.info("runnning L1A")
         run_processor(
             conf[Conf.L1A_WORK_DIR],
             conf[Conf.L1A_EXE],
@@ -473,7 +473,7 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
 
     assert experiment_name, "This variable should have been assigned by now"
 
-    print("detecting the dates of the simulation")
+    logger.info("detecting the dates of the simulation")
     try:
         year_month_format = re.compile("^[0-9]{4}-[0-9]{2}$")
         day_format = re.compile("^[0-9]{2}$")
@@ -502,25 +502,25 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
 
     # Here we expect to have QGIS correctly put in the path
     if start == Proc.L1A or start == Proc.L1B:
-        print("runnning L1B")
+        logger.info("runnning L1B")
         run_processor(
             conf[Conf.L1B_WORK_DIR],
             conf[Conf.L1B_EXE],
             f"{start_date} {end_date}"
         )
-        print("runnning L1B_MM")
+        logger.info("runnning L1B_MM")
         run_processor(
             conf[Conf.L1B_MM_WORK_DIR],
             conf[Conf.L1B_MM_EXE],
             f"{start_date} {end_date}"
         )
-        print("runnning L1B_CX")
+        logger.info("runnning L1B_CX")
         run_processor(
             conf[Conf.L1B_CX_WORK_DIR],
             conf[Conf.L1B_CX_EXE],
             f"-P {data_release_dir}"
         )
-        print("runnning L1B_CC")
+        logger.info("runnning L1B_CC")
         try:
             run_processor(
                 conf[Conf.L1B_CC_WORK_DIR],
@@ -528,9 +528,9 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
                 f"-P {data_release_dir}"
             )
         except Exception:
-            print("this processor failed but we allow the orchestrator to "
+            logger.info("this processor failed but we allow the orchestrator to "
                 "contine the execution as Gabrielle asked.")
-        print("runnning L1B_MM again")
+        logger.info("runnning L1B_MM again")
         run_processor(
             conf[Conf.L1B_MM_WORK_DIR],
             conf[Conf.L1B_MM_EXE],
@@ -542,7 +542,7 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
 
     match end:
         case Proc.L2FT:
-            print("runnning L2FT")
+            logger.info("runnning L2FT")
             run_processor(
                 conf[Conf.L2FT_WORK_DIR],
                 conf[Conf.L2FT_EXE],
@@ -551,7 +551,7 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
             do_backup_and_pam()
             return
         case Proc.L2FB:
-            print("runnning L2FB")
+            logger.info("runnning L2FB")
             run_processor(
                 conf[Conf.L2FB_WORK_DIR],
                 conf[Conf.L2FB_EXE],
@@ -560,7 +560,7 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
             do_backup_and_pam()
             return
         case Proc.L2SM:
-            print("runnning L2SM")
+            logger.info("runnning L2SM")
             run_processor(
                 conf[Conf.L2SM_WORK_DIR],
                 conf[Conf.L2SM_EXE],
@@ -569,7 +569,7 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
             do_backup_and_pam()
             return
         case Proc.L2SI:
-            print("runnning L2SI")
+            logger.info("runnning L2SI")
             l2si_dir = os.path.join(auxiliary_data_dir, "L2OP-SI")
             run_processor(
                 conf[Conf.L2SI_WORK_DIR],
@@ -582,7 +582,7 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
             assert False
 
 # TODO: add the name for the file object for better error messages.
-def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.TextIO) -> None:
+def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.TextIO, appdata: str) -> None:
     """This function creates a user friendly GUI to operate the orchestrator."""
 
     try:
@@ -889,8 +889,18 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
     def orchestrate_simulation():
         conf = [conf_vars[option].get() for option in Conf]
         # TODO: create a file in which to put the log of run
+        start_time = time.gmtime()
+        start_time_str = time.strftime("%H_%M_%S %d-%m-%Y", start_time)
+        logfile_name = f"run from {start_var.get()} to {end_var.get()} at {start_time_str}.txt"
+        logfile_path = os.path.join(appdata, logfile_name)
+        file_handler = logging.FileHandler(logfile_path) if os.name == "nt" \
+            else logging.NullHandler()
+        run_logger = logging.getLogger(f"{__name__}.run")
+        run_logger.setLevel(logging.INFO)
+        run_logger.addHandler(file_handler)
         try:
             run(
+                logger=run_logger,
                 start=Proc[start_var.get()],
                 end=Proc[end_var.get()],
                 pam=pam_var.get(),
@@ -922,8 +932,6 @@ def _main() -> int:
         print("os not supported, some things are not going to work but the GUI "
             "will show up", file=sys.stderr)
 
-    start_time = time.gmtime()
-    start_time_str = time.strftime("%H_%M_%S %d-%m-%Y", start_time)
     home_drive = os.getenv("HOMEDRIVE", "C:")
     local_appdata = os.getenv("LOCALAPPDATA", "C:")
     orchestrator_appdata = os.path.join(local_appdata,
@@ -957,7 +965,7 @@ def _main() -> int:
     # NOTE: should I add support for CLI? also a --version flag?
 
     try:
-        gui(logger, state_file, config_file)
+        gui(logger, state_file, config_file, orchestrator_appdata)
     except Exception as ex:
         raise Exception("unable to create the GUI") from ex
 
