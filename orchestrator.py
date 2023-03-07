@@ -776,7 +776,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
     start_label = tkinter.ttk.Label(orchestrator_frame, text="Start:")
     start_label.grid(column=0, row=0)
 
-    start_var = tkinter.StringVar(root, Proc.L1A.name, "start_var")
+    start_var = tkinter.StringVar(root, start.name, "start_var")
     start_combobox = tkinter.ttk.Combobox(
         orchestrator_frame,
         textvariable=start_var,
@@ -789,7 +789,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
     end_label = tkinter.ttk.Label(orchestrator_frame, text="End:")
     end_label.grid(column=3, row=0)
 
-    end_var = tkinter.StringVar(root, Proc.L1A.name, "end_var")
+    end_var = tkinter.StringVar(root, end.name, "end_var")
     end_combobox = tkinter.ttk.Combobox(
         orchestrator_frame,
         textvariable=end_var,
@@ -799,7 +799,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
     end_combobox.current(0)
     end_combobox.grid(column=4, row=0)
 
-    pam_var = tkinter.BooleanVar(root, False, "pam_var")
+    pam_var = tkinter.BooleanVar(root, pam, "pam_var")
     pam_checkbutton = tkinter.ttk.Checkbutton(
         orchestrator_frame,
         text="PAM",
@@ -825,7 +825,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
     )
     backup_button.grid(column=0, row=1, columnspan=2, pady=".5c", sticky="e")
 
-    backup_var = tkinter.StringVar(root, "", "backup_var")
+    backup_var = tkinter.StringVar(root, backup, "backup_var")
     backup_entry = tkinter.ttk.Entry(
         orchestrator_frame,
         textvariable=backup_var,
@@ -833,7 +833,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
     )
     backup_entry.grid(column=2, row=1, columnspan=3, pady=".5c", sticky="w")
 
-    clean_var = tkinter.BooleanVar(root, True, "clean_var")
+    clean_var = tkinter.BooleanVar(root, clean, "clean_var")
     clean_checkbutton = tkinter.ttk.Checkbutton(
         orchestrator_frame,
         text="Clean",
