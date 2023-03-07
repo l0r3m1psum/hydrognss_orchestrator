@@ -258,6 +258,8 @@ def _escape_str(s: str) -> str:
     # f"{s!r}"[2:-2]
     return s.encode("unicode_escape").decode("utf-8")
 
+# TODO: the validate_orchestrator_arguments should return an error code to allow
+#       for better errors.
 def validate_orchestrator_arguments(start: Proc, end: Proc, pam: bool, clean: bool, backup: str) -> bool:
     if start > end:
         return False
@@ -269,13 +271,12 @@ def validate_orchestrator_arguments(start: Proc, end: Proc, pam: bool, clean: bo
         return False
     if not clean and backup:
         return False
-    if not clean and start == Proc.L1A:
-        return False
 
     assert start <= end
     assert implies(start > Proc.L1B, start == end)
     assert implies(backup, start > Proc.L1A)
     assert implies(pam, end > Proc.L1B)
+    # We allow for clean to be false even if start is L1A
     assert clean or not backup
 
     return True
@@ -618,8 +619,6 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         # We delay all path valitions to the run function, since the default
         # that we give in case of error could also don't exist.
 
-        # TODO: the validate_orchestrator_arguments should return an error code
-        #       to allow for better errors.
         if not validate_orchestrator_arguments(start, end, pam, clean, backup):
             raise ValueError("the state file has an illegal configuration")
     except (json.JSONDecodeError, KeyError, TypeError, ValueError):
