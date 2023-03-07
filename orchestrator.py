@@ -259,16 +259,21 @@ def _escape_str(s: str) -> str:
     return s.encode("unicode_escape").decode("utf-8")
 
 def validate_orchestrator_arguments(start: Proc, end: Proc, pam: bool, clean: bool, backup: str) -> bool:
-    if start > end: return False
-    if start > Proc.L1B and start != end: return False
-    if end > Proc.L1B and start != end: return False
-    if backup and start == Proc.L1A: return False
-    if pam and end <= Proc.L1B: return False
-    if not clean and backup: return False
-    if not clean and start == Proc.L1A: return False
+    if start > end:
+        return False
+    if start > Proc.L1B and start != end:
+        return False
+    if backup and start == Proc.L1A:
+        return False
+    if pam and end <= Proc.L1B:
+        return False
+    if not clean and backup:
+        return False
+    if not clean and start == Proc.L1A:
+        return False
 
     assert start <= end
-    assert implies(start > Proc.L1B or end > Proc.L1B, start == end)
+    assert implies(start > Proc.L1B, start == end)
     assert implies(backup, start > Proc.L1A)
     assert implies(pam, end > Proc.L1B)
     assert clean or not backup
@@ -372,7 +377,8 @@ def run(logger: logging.Logger, start: Proc, end: Proc, pam: bool, clean: bool, 
                 shutil.rmtree(pam_output)
             except Exception as ex:
                 raise Exception("unable to delete {pam_output}") from ex
-        logger.info("orchestration finished\a")
+        logger.info("orchestration finished")
+        print("\a")
 
     if clean:
         logger.info("cleaning up from previous execution")
@@ -630,7 +636,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         conf_json = json.load(config_file)
 
         for option in Conf:
-            key = CONF_NAMES[option]
+            key = option.name
             actual_type = type(conf_json[key])
             if actual_type != str:
                 raise TypeError(f"the key {key} has type {actual_type} instead "
@@ -661,7 +667,8 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
     root.title("Orchestrator")
     def save_state():
         try:
-            state_file.truncate()
+            state_file.truncate(0)
+            state_file.seek(0)
             res = {
                 "start": start_var.get(),
                 "end": end_var.get(),
@@ -747,7 +754,8 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         res = "{\n" + ",\n".join(res) + "\n}"
 
         try:
-            config_file.truncate()
+            config_file.truncate(0)
+            config_file.seek(0)
             config_file.write(res)
             logger.info("configuration saved")
         except OSError:
@@ -893,11 +901,13 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         start_time_str = time.strftime("%H_%M_%S %d-%m-%Y", start_time)
         logfile_name = f"run from {start_var.get()} to {end_var.get()} at {start_time_str}.txt"
         logfile_path = os.path.join(appdata, logfile_name)
+        # TODO: add try except here.
         file_handler = logging.FileHandler(logfile_path) if os.name == "nt" \
             else logging.NullHandler()
         run_logger = logging.getLogger(f"{__name__}.run")
         run_logger.setLevel(logging.INFO)
         run_logger.addHandler(file_handler)
+        # TODO: add formatter.
         try:
             run(
                 logger=run_logger,
@@ -947,8 +957,9 @@ def _main() -> int:
     else:
         try:
             os.makedirs(orchestrator_appdata, exist_ok=True)
-            config_file = open(config_path, "r+")
-            state_file = open(state_path, "r+")
+
+            config_file = os.fdopen(os.open(config_path, os.O_RDWR | os.O_CREAT), 'rt+')
+            state_file = os.fdopen(os.open(state_path, os.O_RDWR | os.O_CREAT), 'rt+')
         except Exception as ex:
             # NOTE: here we could also just operate from memory as a fallback.
             raise Exception("unable to create a necessary file or directory for"
