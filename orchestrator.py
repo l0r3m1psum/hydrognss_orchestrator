@@ -330,7 +330,7 @@ def run(logger: logging.Logger, start: Proc, end: Proc, pam: bool, clean: bool, 
         # We expect %COMSPEC% to be cmd.exe or something like that.
         try:
             # NOTE: should I worry about 'universal_newlines'?
-            p: subprocess.Popen
+
             with subprocess.Popen(
                 args=f"{exe} {arguments}",
                 stdout=subprocess.PIPE,
@@ -921,7 +921,8 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
                 conf=conf
             )
         except Exception as ex:
-            logger.exception("the orchestration encoutered a problem")
+            run_logger.exception("the orchestration encoutered a problem")
+            logger.error("the orchestration terminated baddly")
     run_button = tkinter.ttk.Button(
         orchestrator_frame,
         text="Run!",
