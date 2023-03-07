@@ -35,6 +35,7 @@ import logging
 import os
 import re
 import shutil
+import subprocess
 import sys
 import time
 import tkinter
@@ -318,13 +319,6 @@ def run(logger: logging.Logger, start: Proc, end: Proc, pam: bool, clean: bool, 
     experiment_name = None
 
     def run_processor(working_dir: str, file_path: str, arguments: str) -> None:
-        original_working_dir = os.getcwd()
-        try:
-            os.chdir(working_dir)
-        except OSError as ex:
-            raise Exception(f"unable to move to {working_dir} for {file_path}") \
-                from ex
-
         exe = file_path if file_path.endswith(".exe") \
             else f"py {file_path}" if file_path.endswith(".py") \
             else None
@@ -334,15 +328,24 @@ def run(logger: logging.Logger, start: Proc, end: Proc, pam: bool, clean: bool, 
                 f"{file_path} is not supported")
 
         # We expect %COMSPEC% to be cmd.exe or something like that.
-        # TODO: use subprocess module and log output to file
-        res = os.system(f"{exe} {arguments}")
-        if res != 0:
-             raise Exception(f"{file_path} exited with error code {res}")
-
         try:
-            os.chdir(original_working_dir)
-        except OSError as ex:
-            raise Exception(f"unable to go back to {original_working_dir} for "
+            # NOTE: should I worry about 'universal_newlines'?
+            p: subprocess.Popen
+            with subprocess.Popen(
+                args=f"{exe} {arguments}",
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                cwd=working_dir,
+                text=True
+                ) as p:
+                assert p.stdout is not None # Just for mypy.
+                for line in p.stdout:
+                    logger.info(line.rstrip())
+
+                if p.returncode != 0:
+                    raise Exception(f"{file_path} exited with error code {p.returncode}")
+        except Exception as ex:
+            raise Exception(f"something went wrong during the execution of "
                 f"{file_path}") from ex
 
     def do_backup_and_pam():
