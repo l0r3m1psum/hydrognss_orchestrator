@@ -783,7 +783,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         values=PROC_NAMES,
         state="readonly"
     )
-    start_combobox.current(0)
+    # start_combobox.current(0)
     start_combobox.grid(column=1, row=0)
 
     end_label = tkinter.ttk.Label(orchestrator_frame, text="End:")
@@ -796,7 +796,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         values=PROC_NAMES,
         state="readonly"
     )
-    end_combobox.current(0)
+    # end_combobox.current(0)
     end_combobox.grid(column=4, row=0)
 
     pam_var = tkinter.BooleanVar(root, pam, "pam_var")
