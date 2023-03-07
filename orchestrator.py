@@ -25,9 +25,13 @@ since this orchestrator is meant to be executed in trusted environments we did
 not tackle it.
 """
 
+# TODO: add a VERSION global so that it can be displayed in the window.
+
 import enum
 import idlelib.tooltip # type: ignore
+import io
 import json
+import logging
 import os
 import re
 import shutil
@@ -36,13 +40,18 @@ import time
 import tkinter
 import tkinter.filedialog
 import tkinter.ttk
-import traceback
 import typing
 import zipfile
 
 # We do not know if this is really needed for high DPI screens.
 # import ctypes
 # ctypes.windll.shcore.SetProcessDpiAwareness(1)
+
+if __debug__:
+    # A few functions usefull in assertions.
+    implies = lambda A, B: not A or B
+    iff = lambda A, B: bool(A) == bool(B)
+    xor = lambda A, B: bool(A) != bool(B)
 
 # The processors that the orchestrator manages.
 class Proc(enum.IntEnum):
@@ -53,7 +62,8 @@ class Proc(enum.IntEnum):
     L2SI = enum.auto() # Surface Inundation
     L2SM = enum.auto() # Soil Mosture
 
-# All the options that can be configured.
+# All the options that can be configured. The name in the enumaration is also
+# the key in the JSON object used for serialization.
 class Conf(enum.IntEnum):
     BACKUP_DIR      = 0
     DATA_DIR        = enum.auto()
@@ -84,7 +94,7 @@ class ConfKind(enum.Enum):
     DIR = enum.auto()
 
 # Just for convenience.
-PROC_NAMES = list(Proc.__members__)
+PROC_NAMES = list(Proc.__members__) # NOTE: this is probably useless
 # Since the PAM (Performance Assesment Module) expects the names in this way.
 PROC_NAMES_PAM = ["L1_A", "L1_B", "L2_FB", "L2_FT", "L2_SI", "L2_SM",]
 assert len(Proc) == len(PROC_NAMES_PAM)
@@ -145,27 +155,27 @@ assert len(CONF_KINDS) == len(Conf)
 
 CONF_VALUES_DEFAULT = [
     "C:\\E2ES_backups",
-    "C:\\PDGS_NAS_Folder",
+    "C:\\PDGS_NAS_folder",
     "C:\\L1A\\bin\\HSAVERS.exe",
     "C:\\L1A\\bin",
     "C:\\L1BOP\\scripts\\Run_L1b_Processor_with_dates.py",
-    "C:\\L1BOP\\scripts",
+    "C:\\L1BOP",
     "C:\\L1OP-MM\\scripts\\Run_L1Merge_with_dates.py",
-    "C:\\L1OP-MM\\scripts",
-    "C:\\L1OP-CX\\bin\\L1B_CX_DR.exe",
-    "C:\\L1OP-CX\\bin",
-    "C:\\L1OP-CC\\bin\\L1B_CC_DR.exe",
-    "C:\\L1OP-CC\\bin",
-    "C:\\L2FB\\bin\\L2OP_FB.exe",
-    "C:\\L2FB\\bin",
-    "C:\\L2FT\\bin\\L2PPFT_mainscript.exe",
-    "C:\\L2FT\\bin",
+    "C:\\L1OP-MM",
+    "C:\\L2OP-SI\\bin\\L1B_CX_DR.exe",
+    "C:\\L2OP-SI\\bin",
+    "C:\\L2OP-SI\\bin\\L1B_CC_DR.exe",
+    "C:\\L2OP-SI\\bin",
+    "C:\\L2OP-FB\\bin\\L2OP_FB.exe",
+    "C:\\L2OP-FB\\bin",
+    "C:\\L2OP-FT\\bin\\L2PPFT_mainscript.exe",
+    "C:\\L2OP-FT\\bin",
     "C:\\L2OP-SI\\bin\\L2OP_SI_DR.exe",
     "C:\\L2OP-SI\\bin",
     "C:\\L2OP-SSM\\bin\\SML2OP_start.exe",
     "C:\\L2OP-SSM",
     "C:\\PAM\\bin\\PAM_start.exe",
-    "C:\\PAM\\",
+    "C:\\PAM",
 ]
 assert len(CONF_VALUES_DEFAULT) == len(Conf)
 
@@ -226,94 +236,42 @@ CONF_SUBDIRS: list[typing.Optional[list[str]]] = [
     [], # PROCESSORS_SUBDIRS,
 ]
 assert len(CONF_SUBDIRS) == len(Conf)
-# A iff B = A and B or not A and not B
-# TODO: iff can be represented with bool(A) == bool(B)
 assert all(
-    subdirs is None and kind == ConfKind.EXE
-    or subdirs is not None and kind != ConfKind.EXE
+    iff(subdirs is None, kind == ConfKind.EXE)
     for subdirs, kind in zip(CONF_SUBDIRS, CONF_KINDS)
 ), "subdir is not different from None iff kind is not EXE"
 assert all(
-    type(subdirs) == list and kind == ConfKind.DIR
-    or type(subdirs) != list and kind != ConfKind.DIR
+    iff(type(subdirs) == list, kind == ConfKind.DIR)
     for subdirs, kind in zip(CONF_SUBDIRS, CONF_KINDS)
 ), "subdir is not a list iff kind is DIR"
 
-home_drive = os.path.expandvars("%HOMEDRIVE%")
-
-# %LOCALAPPDATA% can be modified for just this program by running python in the
-# following way: cmd /V /C "set LOCALAPPDATA=... && py ..."
-config_options_file_path = os.path.expandvars(os.path.join(
-    "%LOCALAPPDATA%", "HydroGNSS Orchestrator\\config.json"
-))
+# This is meant to be like a dict returned from json.load().
+STATE_DEFAULT = {
+    "start": "L1A",
+    "end": "L1A",
+    "pam": False,
+    "clean": True,
+    "backup": "",
+}
 
 def _escape_str(s: str) -> str:
     # f"{s!r}"[2:-2]
     return s.encode("unicode_escape").decode("utf-8")
 
-# TODO: In case a path is not correct we should use the empty string
-def read_or_create_config_file() -> typing.Optional[list[str]]:
-    """As the name suggests this function reads the configuration file (or
-    creates it if it does not exists) and then return it to you. If None is
-    returned because an error occurred, you can just copy the
-    CONF_VALUES_DEFAULT and use that as the configuration."""
+def validate_orchestrator_arguments(start: Proc, end: Proc, pam: bool, clean: bool, backup: str) -> bool:
+    if start > end: return False
+    if start > Proc.L1B and start != end: return False
+    if end > Proc.L1B and start != end: return False
+    if backup and start == Proc.L1A: return False
+    if pam and end <= Proc.L1B: return False
+    if not clean and backup: return False
+    if not clean and start == Proc.L1A: return False
 
-    if os.name != "nt":
-        print("skipping the configuration file read/creation because we are not"
-            " on windows", file=sys.stderr)
-        return None
-
-    os.makedirs(os.path.dirname(config_options_file_path), exist_ok=True)
-
-    if os.path.isfile(config_options_file_path):
-        try:
-            with open(config_options_file_path) as f:
-                res = json.load(f)
-
-                config_keys = list(Conf.__members__)
-                res_keys = res.keys()
-                if not set(res_keys) == set(config_keys):
-                    print(f"bad config file, the keys shall be "
-                        f"{sorted(config_keys)} and are {sorted(res_keys)} "
-                        f"instead, loading default config instead",
-                        file=sys.stderr)
-                    return None
-
-                # TODO: here I should change just the ones that don't exist.
-                if not all(os.path.exists(value) for value in res.values()):
-                    print("all the values is the config file shall be existing "
-                        "paths, loading the default config instead",
-                        file=sys.stderr)
-                    return None
-
-                return [res[option.name] for option in Conf]
-
-        except json.JSONDecodeError:
-            print("invalid json in configuration file, loading the default one "
-                "instead", file=sys.stderr)
-            return None
-        except OSError:
-            print("error while opening the config file, loading the default one"
-                " instead", file=sys.stderr)
-            return None
-    else:
-        print("configuration file not found creating the default one",
-            file=sys.stderr)
-
-        res = [
-            f'\t"{option.name}": "{_escape_str(CONF_VALUES_DEFAULT[option])}"'
-            for option in Conf
-        ]
-        res = "{\n" + ",\n".join(res) + "\n}"
-
-        try:
-            with open(config_options_file_path, "w") as f:
-                f.write(res)
-        except OSError:
-            print("unable to create the configuration file", file=sys.stderr)
-            return None
-
-        return CONF_VALUES_DEFAULT[:]
+    assert start <= end
+    assert implies(start > Proc.L1B or end > Proc.L1B, start == end)
+    assert implies(backup, start > Proc.L1A)
+    assert implies(pam, end > Proc.L1B)
+    assert clean or not backup
 
     return True
 
@@ -321,22 +279,17 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
     """If anything goes wrong this function throws an exception with an
     explenation of what went wrong."""
 
-    assert start <= end
-    # Logical implication i.e. (A -> B) is equivalent to (not A or B).
-    assert not pam or end > Proc.L1B, "if pam is enabled then the processor should one of the L2"
-    # TODO: check that start != L1A iff not clean or backup.
-    assert not backup or start != Proc.L1A, "if a backup file is to be restored then the starting processor should not be L1A"
-    assert not clean or not backup, "if clean is enabled then no backup file should be selected"
-    assert not backup or clean, "if a backup file has been specified then clean should be enable"
-    assert not (start > Proc.L1B and end > Proc.L1B) or start == end
     assert len(conf) == len(Conf)
+
+    if not validate_orchestrator_arguments(start, end, pam, clean, backup):
+        raise ValueError("the orchestration was started with invalid arguments")
 
     if os.name != "nt":
         print("skipping the run because we are not on windows", file=sys.stderr)
         return
 
-    # TODO: put all check here so that the UI does not have to be so strict
-    #       about many things.
+    # TODO: check that all path in conf exist and are of the right kind
+    # TODO: check that if it is truthy backup should be a path to an existing .zip
 
     for option in Conf:
         subdirs = CONF_SUBDIRS[option]
@@ -628,13 +581,72 @@ def run(start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[
         case other:
             assert False
 
-def gui(root: tkinter.Tk, conf: list[str]) -> None:
-    """This function creates a user friendly GUI to operate the orchestrator.
+# TODO: add the name for the file object for better error messages.
+def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.TextIO) -> None:
+    """This function creates a user friendly GUI to operate the orchestrator."""
 
-    The GUI can be created on top of any instance of tkinter.Wm the most common
-    subclasses are tkinter.Tk and tkinter.Toplevel.
+    try:
+        state_json = json.load(state_file)
 
-    You need to start the mainloop."""
+        keys  = ["start", "end", "pam", "clean", "backup"]
+        types = [str, str, bool, bool, str]
+        assert len(keys) == len(types)
+
+        for i in range(len(keys)):
+            key = keys[i]
+            actual_type = type(state_json[key])
+            correct_type = types[i]
+            if actual_type != correct_type:
+                raise TypeError(f"the key {key} has type {actual_type} instead "
+                    f"of {correct_type}")
+
+        if len(state_json.keys()) != len(keys):
+            logger.warning("the state file has extraneous keys")
+
+        start = Proc[state_json["start"]]
+        end = Proc[state_json["end"]]
+        pam = state_json["pam"]
+        clean = state_json["clean"]
+        backup = state_json["backup"]
+
+        # We delay all path valitions to the run function, since the default
+        # that we give in case of error could also don't exist.
+
+        # TODO: the validate_orchestrator_arguments should return an error code
+        #       to allow for better errors.
+        if not validate_orchestrator_arguments(start, end, pam, clean, backup):
+            raise ValueError("the state file has an illegal configuration")
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+        logger.exception("an error while reading the previous state file, using"
+            " the default instead")
+        start = Proc[typing.cast(str, STATE_DEFAULT["start"])]
+        end = Proc[typing.cast(str, STATE_DEFAULT["end"])]
+        pam = STATE_DEFAULT["pam"]
+        clean = STATE_DEFAULT["clean"]
+        backup = STATE_DEFAULT["backup"]
+        assert validate_orchestrator_arguments(start, end, pam, clean, backup)
+
+    try:
+        conf_json = json.load(config_file)
+
+        for option in Conf:
+            key = CONF_NAMES[option]
+            actual_type = type(conf_json[key])
+            if actual_type != str:
+                raise TypeError(f"the key {key} has type {actual_type} instead "
+                    f"of {str}")
+
+        if len(conf_json.keys()) != len(Conf):
+            breakpoint()
+            logger.warning("the configuration file has extraneous keys")
+
+        # Again we delay the path validation.
+
+        conf = list(conf_json.values())
+    except (json.JSONDecodeError, KeyError, TypeError):
+        logger.exception("an error occured while reading the configuration file"
+            "using the default one instead")
+        conf = CONF_VALUES_DEFAULT
 
     # Be carefull in the way you create istances of tkinter.Variable. You have
     # to keep a reference to each one of them somewere, either in a function or
@@ -644,14 +656,25 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
     # to use them.
     # https://stackoverflow.com/a/66202218
 
-    assert len(conf) == len(Conf)
-
-    # If somebody calls us multiple times.
-    for child in root.winfo_children(): child.destroy()
-    if 'child' in locals(): del child
-
+    root = tkinter.Tk()
     root.resizable(False, False)
     root.title("Orchestrator")
+    def save_state():
+        try:
+            state_file.truncate()
+            res = {
+                "start": start_var.get(),
+                "end": end_var.get(),
+                "pam": pam_var.get(),
+                "clean": clean_var.get(),
+                "backup": backup_var.get(),
+            }
+            logger.info("saving state file")
+            state_file.write(json.dumps(res))
+        except Exception:
+            logger.exception("unable to save the state")
+        root.destroy()
+    root.protocol("WM_DELETE_WINDOW", save_state)
 
     # Settings Toplevel
 
@@ -668,7 +691,7 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
     settings_frame = tkinter.ttk.Frame(settings_toplevel)
     settings_frame.grid(column=0, row=0, padx=".5c", pady=".5c")
 
-    # NOTE: shall I use tkinter.ttk.LabelFrame as Leila said?
+    # TODO: use tkinter.ttk.LabelFrame as Leila said
     # NOTE: It would be nice to set initialdir for all the exe_dialog so that it
     #       makes the user select files starting from the proper direcotry. But
     #       it would require a bit of messy code and there is no way to contrain
@@ -676,20 +699,18 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
     #       to select just files in the directories of bin and scripts would be
     #       to create a Listbox dialog that shows only the listing of the
     #       directories bin and scripts. But again this would be messy.
-    # NOTE: Should I validate the directory structure of the selected
-    #       direcotries?
 
     exe_dialog = lambda option: tkinter.filedialog.askopenfilename(
         parent=settings_toplevel,
         filetypes=[("Executable", "*.exe *.py"),],
         title=CONF_DIALOG_TITLES[option],
-        initialdir=home_drive,
+        initialdir=os.getenv("HOMEDRIVE", "C:"),
         multiple=False # type: ignore
     ).replace("/", "\\")
     dir_dialog = lambda option: tkinter.filedialog.askdirectory(
         parent=settings_toplevel,
         title=CONF_DIALOG_TITLES[option],
-        initialdir=home_drive
+        initialdir=os.getenv("HOMEDRIVE", "C:")
     ).replace("/", "\\")
     conf_vars = []
     for option in Conf:
@@ -719,10 +740,6 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
     assert len(conf_vars) == len(Conf)
 
     def save_config():
-        if os.name != "nt":
-            print("skipping the saving of the configuration file because we are"
-                " not on windows", file=sys.stderr)
-            return
         res = [
             f'\t"{option.name}": "{_escape_str(conf_vars[option].get())}"'
             for option in Conf
@@ -730,12 +747,14 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
         res = "{\n" + ",\n".join(res) + "\n}"
 
         try:
-            with open(config_options_file_path, "w") as f:
-                f.write(res)
-            print("configuration saved")
+            config_file.truncate()
+            config_file.write(res)
+            logger.info("configuration saved")
         except OSError:
-            print("unable to save the configuration file", file=sys.stderr)
+            logger.exception("unable to save the configuration file")
 
+    # TODO: instead of using a button I should use a tkinter.Menu with save,
+    #       import and export funcitonality.
     save_button = tkinter.ttk.Button(settings_frame, text="Save",
         command=save_config).grid(column=2, row=i+1, pady=".3c")
 
@@ -818,6 +837,7 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
         "debugging keep this checked,\n"
         "unless you choose a backup file.")
 
+    # TODO: here there are some things to fix regarding clean
     def keep_ui_invariant(name1, name2, op):
         """https://tcl.tk/man/tcl8.5/TclCmd/trace.htm#M14"""
         start = Proc[start_var.get()]
@@ -868,6 +888,7 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
     #       the users to do manual changes.
     def orchestrate_simulation():
         conf = [conf_vars[option].get() for option in Conf]
+        # TODO: create a file in which to put the log of run
         try:
             run(
                 start=Proc[start_var.get()],
@@ -878,8 +899,7 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
                 conf=conf
             )
         except Exception as ex:
-            print("the orchestration encoutered a problem: ", file=sys.stderr)
-            traceback.print_exception(type(ex), ex, ex.__traceback__)
+            logger.exception("the orchestration encoutered a problem")
     run_button = tkinter.ttk.Button(
         orchestrator_frame,
         text="Run!",
@@ -895,20 +915,51 @@ def gui(root: tkinter.Tk, conf: list[str]) -> None:
     )
     settings_button.grid(column=3, row=2, columnspan=2)
 
+    root.mainloop()
+
 def _main() -> int:
     if os.name != "nt":
         print("os not supported, some things are not going to work but the GUI "
             "will show up", file=sys.stderr)
 
-    # NOTE: should I add support for CLI?
+    start_time = time.gmtime()
+    start_time_str = time.strftime("%H_%M_%S %d-%m-%Y", start_time)
+    home_drive = os.getenv("HOMEDRIVE", "C:")
+    local_appdata = os.getenv("LOCALAPPDATA", "C:")
+    orchestrator_appdata = os.path.join(local_appdata,
+        "Tor Vergata\\HydroGNSS Orchestrator")
+    config_path = os.path.join(orchestrator_appdata, "conf.json")
+    state_path = os.path.join(orchestrator_appdata, "state.json")
 
-    conf = read_or_create_config_file()
-    if not conf:
-        conf = CONF_VALUES_DEFAULT[:]
+    config_file: typing.TextIO
+    state_file: typing.TextIO
+    if os.name != "nt":
+        config_file = io.StringIO(json.dumps(dict(zip(CONF_NAMES, CONF_VALUES_DEFAULT))))
+        state_file = io.StringIO(json.dumps(STATE_DEFAULT))
+    else:
+        try:
+            os.makedirs(orchestrator_appdata, exist_ok=True)
+            config_file = open(config_path, "r+")
+            state_file = open(state_path, "r+")
+        except Exception as ex:
+            # NOTE: here we could also just operate from memory as a fallback.
+            raise Exception("unable to create a necessary file or directory for"
+                "the orchestrator") from ex
 
-    root = tkinter.Tk()
-    gui(root, conf)
-    root.mainloop()
+    formatter = logging.Formatter("%(levelname)s:%(funcName)s %(message)s")
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+    root_logger.addHandler(console_handler)
+    logger = logging.getLogger(__name__)
+
+    # NOTE: should I add support for CLI? also a --version flag?
+
+    try:
+        gui(logger, state_file, config_file)
+    except Exception as ex:
+        raise Exception("unable to create the GUI") from ex
 
     return 0
 

@@ -1,66 +1,30 @@
 import unittest
 import orchestrator
+import itertools
 
-class TestOrchestratorRun(unittest.TestCase):
+
+class TestOrchestratorArgumentsValidation(unittest.TestCase):
 
     def setUp(self):
         if not __debug__:
-            raise Exception("this test case must be run in debug mode")
+            self.fail("this test case must be run in debug mode")
 
-    def test_processors_order(self):
-        with self.assertRaises(AssertionError):
-            orchestrator.run(
-                start=orchestrator.Proc.L1B,
-                end=orchestrator.Proc.L1A,
-                pam=False,
-                clean=True,
-                backup="/any/path",
-                conf=orchestrator.CONF_VALUES_DEFAULT
-            )
+    def test_all(self):
 
-    def test_pam_when_processor_is_not_L2(self):
-        with self.assertRaises(AssertionError):
-            orchestrator.run(
-                start=orchestrator.Proc.L1A,
-                end=orchestrator.Proc.L1A,
-                pam=True,
-                clean=True,
-                backup="",
-                conf=orchestrator.CONF_VALUES_DEFAULT
-            )
+        args_gen = itertools.product(
+            orchestrator.Proc.__members__.values(), # start
+            orchestrator.Proc.__members__.values(), # end
+            [True, False],                          # pam
+            [True, False],                          # clean
+            ["", "C:\\some\\path"]                  # backup
+        )
+        for args in args_gen:
+            try:
+                _ = orchestrator.validate_orchestrator_arguments(*args)
+            except AssertionError:
+                self.fail(args)
 
-    def test_backup_when_clean_is_selected(self):
-        with self.assertRaises(AssertionError):
-            orchestrator.run(
-                start=orchestrator.Proc.L1B,
-                end=orchestrator.Proc.L1B,
-                pam=False,
-                clean=True,
-                backup="/any/path",
-                conf=orchestrator.CONF_VALUES_DEFAULT
-            )
-
-    def test_L2_processors_should_be_the_same(self):
-        with self.assertRaises(AssertionError):
-            orchestrator.run(
-                start=orchestrator.Proc.L2FT,
-                end=orchestrator.Proc.L2SI,
-                pam=False,
-                clean=False,
-                backup="/any/path",
-                conf=orchestrator.CONF_VALUES_DEFAULT
-            )
-
-    def test_backup_without_clean(self):
-        with self.assertRaises(AssertionError):
-            orchestrator.run(
-                start=orchestrator.Proc.L1B,
-                end=orchestrator.Proc.L1B,
-                pam=False,
-                clean=False,
-                backup="/any/path",
-                conf=orchestrator.CONF_VALUES_DEFAULT
-            )
+        self.assertTrue(True)
 
 if __name__ == '__main__':
     unittest.main()
