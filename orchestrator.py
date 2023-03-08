@@ -340,9 +340,10 @@ def run(logger: logging.Logger, start: Proc, end: Proc, pam: bool, clean: bool, 
                 ) as p:
                 assert p.stdout is not None # Just for mypy.
                 for line in p.stdout:
+                    # TODO: do something sensible for lines that end with just \r
                     logger.info(line.rstrip())
 
-                if p.returncode != 0:
+                if p.wait() != 0:
                     raise Exception(f"{file_path} exited with error code {p.returncode}")
         except Exception as ex:
             raise Exception(f"something went wrong during the execution of "
