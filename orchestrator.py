@@ -95,6 +95,7 @@ class ConfKind(enum.Enum):
     DIR = enum.auto()
 
 # Just for convenience.
+# TODO: just define a function that given an enumeration returns the ordered list of its names
 PROC_NAMES = list(Proc.__members__) # NOTE: this is probably useless
 # Since the PAM (Performance Assesment Module) expects the names in this way.
 PROC_NAMES_PAM = ["L1_A", "L1_B", "L2_FB", "L2_FT", "L2_SI", "L2_SM",]
