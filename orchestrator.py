@@ -956,7 +956,7 @@ def _main() -> int:
     config_file: typing.TextIO
     state_file: typing.TextIO
     if os.name != "nt":
-        config_file = io.StringIO(json.dumps(dict(zip(CONF_NAMES, CONF_VALUES_DEFAULT))))
+        config_file = io.StringIO(json.dumps(dict(zip(list(Conf.__members__), CONF_VALUES_DEFAULT))))
         state_file = io.StringIO(json.dumps(STATE_DEFAULT))
     else:
         try:
