@@ -28,7 +28,7 @@ not tackle it.
 # TODO: add a VERSION global so that it can be displayed in the window.
 
 import enum
-import idlelib.tooltip # type: ignore
+import inspect
 import io
 import json
 import logging
@@ -40,6 +40,7 @@ import sys
 import time
 import tkinter
 import tkinter.filedialog
+import tkinter.messagebox
 import tkinter.ttk
 import typing
 import zipfile
@@ -54,8 +55,13 @@ if __debug__:
     iff = lambda A, B: bool(A) == bool(B)
     xor = lambda A, B: bool(A) != bool(B)
 
-# The processors that the orchestrator manages.
+################################################################################
+# Data                                                                         #
+################################################################################
+
+# Processors ###################################################################
 class Proc(enum.IntEnum):
+    """The processors that the orchestrator manages."""
     L1A  = 0           # HSAVERS
     L1B  = enum.auto() # ???
     L2FB = enum.auto() # Forest Biomass
@@ -63,9 +69,17 @@ class Proc(enum.IntEnum):
     L2SI = enum.auto() # Surface Inundation
     L2SM = enum.auto() # Soil Mosture
 
-# All the options that can be configured. The name in the enumaration is also
-# the key in the JSON object used for serialization.
+# The PAM (Performance Assesment Module) expects the names with this format.
+PROC_NAMES_PAM = ["L1_A", "L1_B", "L2_FB", "L2_FT", "L2_SI", "L2_SM",]
+assert len(Proc) == len(PROC_NAMES_PAM)
+
+# Configuration of the variuous processors #####################################
+# Here we define a big table (the lists here defined are its rows) with all the
+# usefull information about the paths that are neede by the various processors.
+
 class Conf(enum.IntEnum):
+    """All the paths that can be configured. The name in the enumaration is also
+    the key in the JSON object used for serialization."""
     BACKUP_DIR      = 0
     DATA_DIR        = enum.auto()
     L1A_EXE         = enum.auto()
@@ -89,17 +103,10 @@ class Conf(enum.IntEnum):
     PAM_EXE         = enum.auto()
     PAM_WORK_DIR    = enum.auto()
 
-# Which kind of path to expect in the configuration option.
 class ConfKind(enum.Enum):
+    """Which kind of path to expect in the configuration option."""
     EXE = enum.auto()
     DIR = enum.auto()
-
-# Just for convenience.
-# TODO: just define a function that given an enumeration returns the ordered list of its names
-PROC_NAMES = list(Proc.__members__) # NOTE: this is probably useless
-# Since the PAM (Performance Assesment Module) expects the names in this way.
-PROC_NAMES_PAM = ["L1_A", "L1_B", "L2_FB", "L2_FT", "L2_SI", "L2_SM",]
-assert len(Proc) == len(PROC_NAMES_PAM)
 
 # Names of the configuration options to be displayed in the GUI.
 CONF_NAMES = [
@@ -247,50 +254,70 @@ assert all(
     for subdirs, kind in zip(CONF_SUBDIRS, CONF_KINDS)
 ), "subdir is not a list iff kind is DIR"
 
-# This is meant to be like a dict returned from json.load().
-STATE_DEFAULT = {
-    "start": "L1A",
-    "end": "L1A",
+# Arguments ####################################################################
+
+class Args(typing.TypedDict):
+    """The arguments needed to run the orchestration. Not all combination of
+    arguments are valid."""
+    start: Proc
+    end: Proc
+    pam: bool
+    backup: str
+
+ARGS_DEFAULT: Args = {
+    "start": Proc.L1A,
+    "end": Proc.L1A,
     "pam": False,
-    "clean": True,
     "backup": "",
 }
 
-def _escape_str(s: str) -> str:
+################################################################################
+# Code                                                                         #
+################################################################################
+
+# Utilities ####################################################################
+
+@typing.no_type_check
+def _enum_members_as_strings(e: enum.Enum) -> list[str]:
+    return list(e.__members__)
+
+def _escape_string(s: str) -> str:
     # f"{s!r}"[2:-2]
     return s.encode("unicode_escape").decode("utf-8")
 
-# TODO: the validate_orchestrator_arguments should return an error code to allow
-#       for better errors.
-def validate_orchestrator_arguments(start: Proc, end: Proc, pam: bool, clean: bool, backup: str) -> bool:
+# Implementation ###############################################################
+
+def validate_arguments(args: Args) -> bool:
+    start = args["start"]
+    end = args["end"]
+    pam = args["pam"]
+    backup = args["backup"]
+
     if start > end:
         return False
     if start > Proc.L1B and start != end:
         return False
     if backup and start == Proc.L1A:
         return False
-    if pam and end <= Proc.L1B:
-        return False
-    if not clean and backup:
+    if pam and end < Proc.L1B:
         return False
 
+    # NOTE: does it make sense to keep the spec?
     assert start <= end
     assert implies(start > Proc.L1B, start == end)
     assert implies(backup, start > Proc.L1A)
-    assert implies(pam, end > Proc.L1B)
-    # We allow for clean to be false even if start is L1A
-    assert clean or not backup
+    assert implies(pam, end > Proc.L1A)
 
     return True
 
-def run(logger: logging.Logger, start: Proc, end: Proc, pam: bool, clean: bool, backup: str, conf: list[str]) -> None:
+assert validate_arguments(ARGS_DEFAULT)
+
+def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
     """If anything goes wrong this function throws an exception with an
     explenation of what went wrong."""
 
+    assert validate_arguments(args)
     assert len(conf) == len(Conf)
-
-    if not validate_orchestrator_arguments(start, end, pam, clean, backup):
-        raise ValueError("the orchestration was started with invalid arguments")
 
     if os.name != "nt":
         logger.info("skipping the run because we are not on windows")
@@ -307,13 +334,18 @@ def run(logger: logging.Logger, start: Proc, end: Proc, pam: bool, clean: bool, 
             assert CONF_KINDS[option] == ConfKind.DIR
             subdir_path = os.path.join(conf[option], subdir)
             if not os.path.exists(subdir_path):
-                # NOTE: Should I use an actual logger at this point.
                 logger.warning(f"{conf[option]} does not contain {subdir} as a "
                     f"directory")
 
     data_dir = conf[Conf.DATA_DIR]
     data_release_dir = os.path.join(data_dir, "DataRelease")
     auxiliary_data_dir = os.path.join(data_dir, "Auxiliary_Data")
+
+    start = args["start"]
+    end = args["end"]
+    pam = args["pam"]
+    backup = args["backup"]
+    should_clean = start == Proc.L1A or backup
 
     # This is used later to create the backup name and to give input to the PAM
     # and it is set either when loading a backup or when running HSAVERS.
@@ -350,7 +382,7 @@ def run(logger: logging.Logger, start: Proc, end: Proc, pam: bool, clean: bool, 
             raise Exception(f"something went wrong during the execution of "
                 f"{file_path}") from ex
 
-    def do_backup_and_pam():
+    def do_backup_and_pam() -> None:
         timestamp = f"{int(time.time())}"
         assert len(timestamp) == 10
         assert experiment_name
@@ -384,9 +416,9 @@ def run(logger: logging.Logger, start: Proc, end: Proc, pam: bool, clean: bool, 
             except Exception as ex:
                 raise Exception("unable to delete {pam_output}") from ex
         logger.info("orchestration finished")
-        print("\a")
+        print("\a", end='')
 
-    if clean:
+    if should_clean:
         logger.info("cleaning up from previous execution")
         if os.path.exists(data_release_dir):
             shutil.rmtree(data_release_dir)
@@ -410,7 +442,7 @@ def run(logger: logging.Logger, start: Proc, end: Proc, pam: bool, clean: bool, 
         logger.info("keeping the data release directory of the previous execution")
 
     if backup:
-        assert clean
+        assert should_clean
         backup_name_format = re.compile("_[0-9]{10}\.zip$")
         experiment_name = backup_name_format.sub("", backup).split("\\")[-1]
         if experiment_name == backup:
@@ -453,7 +485,7 @@ def run(logger: logging.Logger, start: Proc, end: Proc, pam: bool, clean: bool, 
         if not experiment_name_format.search(experiment_name):
             raise Exception("the L1A output directory has not the correct format")
 
-        # This is needed for when clean == False, so that the PAM can read the
+        # This is needed for when not should_clean, so that the PAM can read the
         # appropriate file from the PAM directory in the backup folder.
         try:
             with open(os.path.join(data_release_dir, "experiment_name.txt"), 'w') as f:
@@ -597,44 +629,50 @@ def run(logger: logging.Logger, start: Proc, end: Proc, pam: bool, clean: bool, 
 def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.TextIO, appdata: str) -> None:
     """This function creates a user friendly GUI to operate the orchestrator."""
 
+    start: Proc
+    end: Proc
+    pam: bool
+    backup: str
+
     try:
         state_json = json.load(state_file)
 
-        keys  = ["start", "end", "pam", "clean", "backup"]
-        types = [str, str, bool, bool, str]
-        assert len(keys) == len(types)
+        annotations = inspect.get_annotations(Args)
+        keys  = list(annotations.keys())
+        types = list(annotations.values())
+        del annotations
 
         for i in range(len(keys)):
             key = keys[i]
             actual_type = type(state_json[key])
             correct_type = types[i]
-            if actual_type != correct_type:
+            if not issubclass(correct_type, actual_type):
                 raise TypeError(f"the key {key} has type {actual_type} instead "
                     f"of {correct_type}")
 
         if len(state_json.keys()) != len(keys):
             logger.warning("the state file has extraneous keys")
 
-        start = Proc[state_json["start"]]
-        end = Proc[state_json["end"]]
+        # TODO: clamp start and end.
+        start = Proc(state_json["start"])
+        end = Proc(state_json["end"])
         pam = state_json["pam"]
-        clean = state_json["clean"]
         backup = state_json["backup"]
 
         # We delay all path valitions to the run function, since the default
         # that we give in case of error could also don't exist.
 
-        if not validate_orchestrator_arguments(start, end, pam, clean, backup):
+        args: Args = {"start": start, "end": end, "pam": pam, "backup": backup}
+        if not validate_arguments(args):
             raise ValueError("the state file has an illegal configuration")
+        del args
     except (json.JSONDecodeError, KeyError, TypeError, ValueError):
         logger.exception("an error while reading the previous state file, using"
             " the default instead")
-        start = Proc[typing.cast(str, STATE_DEFAULT["start"])]
-        end = Proc[typing.cast(str, STATE_DEFAULT["end"])]
-        pam = STATE_DEFAULT["pam"]
-        clean = STATE_DEFAULT["clean"]
-        backup = STATE_DEFAULT["backup"]
-        assert validate_orchestrator_arguments(start, end, pam, clean, backup)
+        start = Proc(ARGS_DEFAULT["start"])
+        end = Proc(ARGS_DEFAULT["end"])
+        pam = ARGS_DEFAULT["pam"]
+        backup = ARGS_DEFAULT["backup"]
 
     try:
         conf_json = json.load(config_file)
@@ -669,17 +707,17 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
     root = tkinter.Tk()
     root.resizable(False, False)
     root.title("Orchestrator")
-    def save_state():
+    def save_state() -> None:
         try:
             state_file.truncate(0)
             state_file.seek(0)
-            res = {
-                "start": start_var.get(),
-                "end": end_var.get(),
+            res: Args = {
+                "start": Proc[start_var.get()],
+                "end": Proc[end_var.get()],
                 "pam": pam_var.get(),
-                "clean": clean_var.get(),
                 "backup": backup_var.get(),
             }
+            assert validate_arguments(res)
             logger.info("saving state file")
             state_file.write(json.dumps(res))
         except Exception:
@@ -752,7 +790,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
 
     def save_config():
         res = [
-            f'\t"{option.name}": "{_escape_str(conf_vars[option].get())}"'
+            f'\t"{option.name}": "{_escape_string(conf_vars[option].get())}"'
             for option in Conf
         ]
         res = "{\n" + ",\n".join(res) + "\n}"
@@ -782,7 +820,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
     start_combobox = tkinter.ttk.Combobox(
         orchestrator_frame,
         textvariable=start_var,
-        values=PROC_NAMES,
+        values=_enum_members_as_strings(Proc),
         state="readonly"
     )
     # start_combobox.current(0)
@@ -795,7 +833,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
     end_combobox = tkinter.ttk.Combobox(
         orchestrator_frame,
         textvariable=end_var,
-        values=PROC_NAMES,
+        values=_enum_members_as_strings(Proc),
         state="readonly"
     )
     # end_combobox.current(0)
@@ -835,21 +873,6 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
     )
     backup_entry.grid(column=2, row=1, columnspan=3, pady=".5c", sticky="w")
 
-    clean_var = tkinter.BooleanVar(root, clean, "clean_var")
-    clean_checkbutton = tkinter.ttk.Checkbutton(
-        orchestrator_frame,
-        text="Clean",
-        variable=clean_var,
-        onvalue=True,
-        offvalue=False
-    )
-    clean_checkbutton.grid(column=5, row=1)
-    clean_tooltip = idlelib.tooltip.Hovertip(clean_checkbutton,
-        "If you do not want to do some\n"
-        "debugging keep this checked,\n"
-        "unless you choose a backup file.")
-
-    # TODO: here there are some things to fix regarding clean
     def keep_ui_invariant(name1, name2, op):
         """https://tcl.tk/man/tcl8.5/TclCmd/trace.htm#M14"""
         start = Proc[start_var.get()]
@@ -871,36 +894,38 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
                 else:
                     if start > Proc.L1B:
                         start_combobox.current(end.value)
-                if end <= Proc.L1B:
+                if end < Proc.L1B:
                     pam_var.set(False)
             # Both the PAM checkbox and the backup entry should be both cleared
             # and disabled if are not valid to input and enabled otherwise. This
             # is a more crude approach that is slightly simpler to implement.
             case "pam_var":
-                if end <= Proc.L1B:
+                if end < Proc.L1B:
                     pam_var.set(False)
             case "backup_var":
                 if start == Proc.L1A:
                     backup_var.set("")
-                if backup_var.get():
-                    clean_var.set(False)
-            case "clean_var":
-                if backup_var.get():
-                    clean_var.set(False)
             case other:
                 assert False
+
+        # TODO: add assertion with validate_arguments
     start_var.trace_add("write", keep_ui_invariant)
     end_var.trace_add("write", keep_ui_invariant)
     pam_var.trace_add("write", keep_ui_invariant)
     backup_var.trace_add("write", keep_ui_invariant)
-    clean_var.trace_add("write", keep_ui_invariant)
 
-    # NOTE: right now the simulation is allowed to start even if start
-    #       != Proc.L1A and a backup file is not selected. This is done to allow
-    #       the users to do manual changes.
-    def orchestrate_simulation():
+    def orchestrate_simulation() -> None:
+        if Proc[start_var.get()] > Proc.L1A and not backup_var.get():
+            should_continue = tkinter.messagebox.askokcancel(
+                "Are you sure that you want to to proceed?",
+                "If a backup file is not selected, the metadata from the previous "
+                "run will be processed"
+            )
+            if not should_continue:
+                return
+
         conf = [conf_vars[option].get() for option in Conf]
-        # TODO: create a file in which to put the log of run
+
         start_time = time.gmtime()
         start_time_str = time.strftime("%H_%M_%S %d-%m-%Y", start_time)
         logfile_name = f"run from {start_var.get()} to {end_var.get()} at {start_time_str}.txt"
@@ -912,14 +937,17 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         run_logger.setLevel(logging.INFO)
         run_logger.addHandler(file_handler)
         # TODO: add formatter.
+
+        args: Args = {
+            "start": Proc[start_var.get()],
+            "end": Proc[end_var.get()],
+            "pam": pam_var.get(),
+            "backup": backup_var.get(),
+        }
         try:
             run(
                 logger=run_logger,
-                start=Proc[start_var.get()],
-                end=Proc[end_var.get()],
-                pam=pam_var.get(),
-                clean=clean_var.get(),
-                backup=backup_var.get(),
+                args=args,
                 conf=conf
             )
         except Exception as ex:
@@ -957,8 +985,9 @@ def _main() -> int:
     config_file: typing.TextIO
     state_file: typing.TextIO
     if os.name != "nt":
-        config_file = io.StringIO(json.dumps(dict(zip(list(Conf.__members__), CONF_VALUES_DEFAULT))))
-        state_file = io.StringIO(json.dumps(STATE_DEFAULT))
+        conf_default = dict(zip(_enum_members_as_strings(Conf), CONF_VALUES_DEFAULT))
+        config_file = io.StringIO(json.dumps(conf_default))
+        state_file = io.StringIO(json.dumps(ARGS_DEFAULT))
     else:
         try:
             os.makedirs(orchestrator_appdata, exist_ok=True)
@@ -966,7 +995,9 @@ def _main() -> int:
             config_file = os.fdopen(os.open(config_path, os.O_RDWR | os.O_CREAT), 'rt+')
             state_file = os.fdopen(os.open(state_path, os.O_RDWR | os.O_CREAT), 'rt+')
         except Exception as ex:
-            # NOTE: here we could also just operate from memory as a fallback.
+            # Here we could also just operate from memory as a fallback, but if
+            # we can't create/open files we may have a bigger problem, therefore
+            # we just stop the execution here.
             raise Exception("unable to create a necessary file or directory for"
                 "the orchestrator") from ex
 
@@ -979,6 +1010,8 @@ def _main() -> int:
     logger = logging.getLogger(__name__)
 
     # NOTE: should I add support for CLI? also a --version flag?
+    # TODO: find a way to install the files the first time we run the
+    #       orchestrator that does not involve a bunch of errors like now.
 
     try:
         gui(logger, state_file, config_file, orchestrator_appdata)

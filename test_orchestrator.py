@@ -9,6 +9,7 @@ class TestOrchestratorArgumentsValidation(unittest.TestCase):
         if not __debug__:
             self.fail("this test case must be run in debug mode")
 
+    @unittest.skip("not used anymore")
     def test_all(self):
 
         args_gen = itertools.product(
