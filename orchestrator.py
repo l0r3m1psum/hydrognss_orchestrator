@@ -626,7 +626,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
             assert False
 
 # TODO: add the name for the file object for better error messages.
-def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.TextIO, appdata: str) -> None:
+def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.TextIO, log_dir: str) -> None:
     """This function creates a user friendly GUI to operate the orchestrator."""
 
     start: Proc
@@ -929,7 +929,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         start_time = time.gmtime()
         start_time_str = time.strftime("%H_%M_%S %d-%m-%Y", start_time)
         logfile_name = f"run from {start_var.get()} to {end_var.get()} at {start_time_str}.txt"
-        logfile_path = os.path.join(appdata, logfile_name)
+        logfile_path = os.path.join(log_dir, logfile_name)
         # TODO: add try except here.
         file_handler = logging.FileHandler(logfile_path) if os.name == "nt" \
             else logging.NullHandler()
@@ -1001,6 +1001,13 @@ def _main() -> int:
             raise Exception("unable to create a necessary file or directory for"
                 "the orchestrator") from ex
 
+    log_dir = "..\\log"
+    if not os.path.exists(log_dir) and os.name == "nt":
+        print("the orchestrator was not launched from the correct working "
+            "directory, it did not found the ..\\log directory",
+            file=sys.stderr)
+        return 1
+
     formatter = logging.Formatter("%(levelname)s:%(funcName)s %(message)s")
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(formatter)
@@ -1014,7 +1021,7 @@ def _main() -> int:
     #       orchestrator that does not involve a bunch of errors like now.
 
     try:
-        gui(logger, state_file, config_file, orchestrator_appdata)
+        gui(logger, state_file, config_file, log_dir)
     except Exception as ex:
         raise Exception("unable to create the GUI") from ex
 
