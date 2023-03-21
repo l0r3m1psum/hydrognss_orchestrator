@@ -941,6 +941,10 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         run_logger.addHandler(file_handler)
         # TODO: add formatter.
 
+        # Closing the window to see if this solves the misterious bug that is
+        # related to deleting the DataRelease direcotry.
+        root.destroy()
+
         args: Args = {
             "start": Proc[start_var.get()],
             "end": Proc[end_var.get()],
