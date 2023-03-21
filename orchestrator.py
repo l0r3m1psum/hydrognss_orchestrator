@@ -785,12 +785,27 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         def closure(var=var, dialog=dialog, entry=entry, option=option):
             res = dialog(option)
             if res:
+                nonlocal last_value, last_index
+                last_value = var.get()
+                last_index = option
                 var.set(res)
             entry.xview("end")
         tkinter.ttk.Button(settings_frame, text="Browse", command=closure) \
             .grid(column=2, row=i.value)
     del var, entry, kind, dialog
     assert len(conf_vars) == len(Conf)
+
+    last_value = None
+    last_index = None
+    def undo_config_change() -> None:
+        nonlocal last_value, last_index
+        if last_value is not None and last_index is not None:
+            logger.info("undoing last change to the configuration")
+            conf_vars[last_index].set(last_value)
+            last_value = None
+            last_index = None
+    tkinter.ttk.Button(settings_frame, text="Undo", command=undo_config_change) \
+        .grid(column=0, row=i+1)
 
     def save_config():
         res = [
