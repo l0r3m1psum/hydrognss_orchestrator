@@ -362,10 +362,11 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
 
         # We expect %COMSPEC% to be cmd.exe or something like that.
         try:
+            cmd_with_args = f"{exe} {arguments}"
+            logger.info(f"launching '{cmd_with_args}'")
             # NOTE: should I worry about 'universal_newlines'?
-
             with subprocess.Popen(
-                args=f"{exe} {arguments}",
+                args=cmd_with_args,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 cwd=working_dir,
