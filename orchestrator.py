@@ -221,7 +221,7 @@ PROCESSORS_SUBDIRS = [
 # This are the subdirectories that must be in each directory of the
 # configuration options.
 CONF_SUBDIRS: list[typing.Optional[list[str]]] = [
-    ["PAM"],
+    [],
     ["Auxiliary_Data", "ConfigurationFiles", "DataRelease"],
     None,
     [], # PROCESSORS_SUBDIRS,
@@ -505,8 +505,11 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
             f"{experiment_name[:-21]}_inOutReferenceFile.mat")
 
         try:
-            shutil.copy2(l1a_file_for_pam, os.path.join(conf[Conf.BACKUP_DIR],
-                f"PAM\\{experiment_name}.mat"))
+            # This code is commented-out because it was needed before but now
+            # is not. We keep it arround just in case something has to change
+            # back...
+            # shutil.copy2(l1a_file_for_pam, os.path.join(conf[Conf.BACKUP_DIR],
+            #     f"PAM\\{experiment_name}.mat"))
             shutil.copy2(l1a_file_for_pam, data_release_dir)
         except Exception as ex:
             raise Exception("unable to copy files for the PAM") from ex
