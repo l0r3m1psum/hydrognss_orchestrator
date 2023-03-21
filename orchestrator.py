@@ -939,6 +939,13 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
             else logging.NullHandler()
         run_logger = logging.getLogger(f"{__name__}.run")
         run_logger.setLevel(logging.INFO)
+        # If we run multiple simulations from the same window we keep appending
+        # file handlers to the same {__name__}.run logger object, therefore we
+        # append the log of the new simulation to the old files, which is bad.
+        # This happens because we call logging.getLogger() with the same name
+        # multiple times and it gives us back always the same logger object.
+        while run_logger.handlers:
+            run_logger.removeHandler(run_logger.handlers[0])
         run_logger.addHandler(file_handler)
         # TODO: add formatter.
 
