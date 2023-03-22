@@ -737,7 +737,6 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
                     f"of {str}")
 
         if len(conf_json.keys()) != len(Conf):
-            breakpoint()
             logger.warning("the configuration file has extraneous keys")
 
         # Again we delay the path validation.
