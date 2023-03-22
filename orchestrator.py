@@ -758,7 +758,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
     root = tkinter.Tk()
     root.resizable(False, False)
     root.title("Orchestrator")
-    def save_state() -> None:
+    def save_state_and_close() -> None:
         try:
             state_file.truncate(0)
             state_file.seek(0)
@@ -774,7 +774,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         except Exception:
             logger.exception("unable to save the state")
         root.destroy()
-    root.protocol("WM_DELETE_WINDOW", save_state)
+    root.protocol("WM_DELETE_WINDOW", save_state_and_close)
 
     # Settings Toplevel
 
@@ -1033,10 +1033,6 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         run_logger.addHandler(file_handler)
         # TODO: add formatter.
 
-        # Closing the window to see if this solves the misterious bug that is
-        # related to deleting the DataRelease direcotry.
-        root.destroy()
-
         args: Args = {
             "start": Proc[start_var.get()],
             "end": Proc[end_var.get()],
@@ -1052,6 +1048,11 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         except Exception as ex:
             run_logger.exception("the orchestration encoutered a problem")
             logger.error("the orchestration terminated baddly")
+
+        # Closing the window to see if this solves the misterious bug that is
+        # related to deleting the DataRelease direcotry.
+        save_state_and_close()
+
     run_button = tkinter.ttk.Button(
         orchestrator_frame,
         text="Run!",
