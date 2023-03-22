@@ -254,6 +254,54 @@ assert all(
     for subdirs, kind in zip(CONF_SUBDIRS, CONF_KINDS)
 ), "subdir is not a list iff kind is DIR"
 
+class ConfGroup(enum.IntEnum):
+    IO_DIR  = 0
+    L1A     = enum.auto()
+    L1B     = enum.auto()
+    L2FB    = enum.auto()
+    L2FT    = enum.auto()
+    L2SI    = enum.auto()
+    L2SM    = enum.auto()
+    PAM     = enum.auto()
+
+CONF_GROUP_NAME = [
+    "Input/Output Directories",
+    "HSAVERS",
+    "L1B Processors",
+    "Forest Biomass",
+    "Freeze/Thaw state",
+    "Surface Inundation",
+    "Soil Mosture",
+    "Performance Assesment Module",
+]
+assert len(ConfGroup) == len(CONF_GROUP_NAME)
+
+CONF_GROUP = [
+    ConfGroup.IO_DIR,
+    ConfGroup.IO_DIR,
+    ConfGroup.L1A,
+    ConfGroup.L1A,
+    ConfGroup.L1B,
+    ConfGroup.L1B,
+    ConfGroup.L1B,
+    ConfGroup.L1B,
+    ConfGroup.L1B,
+    ConfGroup.L1B,
+    ConfGroup.L1B,
+    ConfGroup.L1B,
+    ConfGroup.L2FB,
+    ConfGroup.L2FB,
+    ConfGroup.L2FT,
+    ConfGroup.L2FT,
+    ConfGroup.L2SI,
+    ConfGroup.L2SI,
+    ConfGroup.L2SM,
+    ConfGroup.L2SM,
+    ConfGroup.PAM,
+    ConfGroup.PAM,
+]
+assert len(Conf) == len(CONF_GROUP)
+
 # Arguments ####################################################################
 
 class Args(typing.TypedDict):
@@ -744,7 +792,6 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
     settings_frame = tkinter.ttk.Frame(settings_toplevel)
     settings_frame.grid(column=0, row=0, padx=".5c", pady=".5c")
 
-    # TODO: use tkinter.ttk.LabelFrame as Leila said
     # NOTE: It would be nice to set initialdir for all the exe_dialog so that it
     #       makes the user select files starting from the proper direcotry. But
     #       it would require a bit of messy code and there is no way to contrain
@@ -752,6 +799,22 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
     #       to select just files in the directories of bin and scripts would be
     #       to create a Listbox dialog that shows only the listing of the
     #       directories bin and scripts. But again this would be messy.
+
+    settings_label_frames = []
+    for group in ConfGroup:
+        settings_label_frame = tkinter.ttk.LabelFrame(settings_frame,
+            text=CONF_GROUP_NAME[group])
+        settings_label_frames.append(settings_label_frame)
+    del settings_label_frame
+
+    settings_label_frames[ConfGroup.IO_DIR].grid(row=0, column=0)
+    settings_label_frames[ConfGroup.L1A]   .grid(row=1, column=0)
+    settings_label_frames[ConfGroup.L1B]   .grid(row=2, column=0, rowspan=3)
+    settings_label_frames[ConfGroup.L2FB]  .grid(row=0, column=1)
+    settings_label_frames[ConfGroup.L2FT]  .grid(row=1, column=1)
+    settings_label_frames[ConfGroup.L2SI]  .grid(row=2, column=1)
+    settings_label_frames[ConfGroup.L2SM]  .grid(row=3, column=1)
+    settings_label_frames[ConfGroup.PAM]   .grid(row=4, column=1)
 
     exe_dialog = lambda option: tkinter.filedialog.askopenfilename(
         parent=settings_toplevel,
@@ -766,13 +829,20 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         initialdir=os.getenv("HOMEDRIVE", "C:")
     ).replace("/", "\\")
     conf_vars = []
+    # Here the grid layut used are always relative to a LabelFrame. Apparently
+    # even though the row number is relative to the loop and not the a
+    # LabelFrame everything seems to work fine. To give a concrete example of
+    # what I am talking about consider when we put the first widget inside a
+    # LabelFrame at, say, iteration n, the widget will be put in row n but it
+    # will still show up as the first element in the LabelFrame without any
+    # additional space above it.
     for option in Conf:
         i = option
-        tkinter.ttk.Label(settings_frame, text=CONF_NAMES[i]) \
+        tkinter.ttk.Label(settings_label_frames[CONF_GROUP[option]], text=CONF_NAMES[i]) \
             .grid(column=0, row=i.value, sticky="w", padx=".1c")
         var = tkinter.StringVar(root, conf[i])
         conf_vars.append(var)
-        entry = tkinter.ttk.Entry(settings_frame, textvariable=var,
+        entry = tkinter.ttk.Entry(settings_label_frames[CONF_GROUP[option]], textvariable=var,
             state="readonly", width=40)
         entry.grid(column=1, row=i.value, padx=".1c")
         entry.xview("end")
@@ -790,7 +860,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
                 last_index = option
                 var.set(res)
             entry.xview("end")
-        tkinter.ttk.Button(settings_frame, text="Browse", command=closure) \
+        tkinter.ttk.Button(settings_label_frames[CONF_GROUP[option]], text="Browse", command=closure) \
             .grid(column=2, row=i.value)
     del var, entry, kind, dialog
     assert len(conf_vars) == len(Conf)
@@ -805,7 +875,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
             last_value = None
             last_index = None
     tkinter.ttk.Button(settings_frame, text="Undo", command=undo_config_change) \
-        .grid(column=0, row=i+1)
+        .grid(column=0, row=i+1, stick="e")
 
     def save_config():
         res = [
@@ -825,7 +895,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
     # TODO: instead of using a button I should use a tkinter.Menu with save,
     #       import and export funcitonality.
     save_button = tkinter.ttk.Button(settings_frame, text="Save",
-        command=save_config).grid(column=2, row=i+1, pady=".3c")
+        command=save_config).grid(column=1, row=i+1, pady=".3c", stick="w")
 
     # Orchestrator Toplevel
 
