@@ -1015,12 +1015,14 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         conf = [conf_vars[option].get() for option in Conf]
 
         start_time = time.gmtime()
-        start_time_str = time.strftime("%H_%M_%S %d-%m-%Y", start_time)
-        logfile_name = f"run from {start_var.get()} to {end_var.get()} at {start_time_str}.txt"
+        start_time_str = time.strftime("%Y%m%m_%H%M%S", start_time)
+        pseudo_module_id = f"{start_var.get()}{end_var.get()}"
+        logfile_name = f"{pseudo_module_id}_{start_time_str}.log"
         logfile_path = os.path.join(log_dir, logfile_name)
-        # TODO: add try except here.
-        file_handler = logging.FileHandler(logfile_path) if os.name == "nt" \
-            else logging.NullHandler()
+        try:
+            file_handler = logging.FileHandler(logfile_path)
+        except Exception as ex:
+            logger.exception("unable to create log file for this run")
         run_logger = logging.getLogger(f"{__name__}.run")
         run_logger.setLevel(logging.INFO)
         # If we run multiple simulations from the same window we keep appending
@@ -1030,8 +1032,10 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         # multiple times and it gives us back always the same logger object.
         while run_logger.handlers:
             run_logger.removeHandler(run_logger.handlers[0])
+        file_handler.setFormatter(
+            logging.Formatter("%(asctime)s %(levelname)s: %(funcName)s: %(message)s")
+        )
         run_logger.addHandler(file_handler)
-        # TODO: add formatter.
 
         args: Args = {
             "start": Proc[start_var.get()],
