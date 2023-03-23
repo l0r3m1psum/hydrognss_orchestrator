@@ -1007,7 +1007,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
             should_continue = tkinter.messagebox.askokcancel(
                 "Are you sure that you want to to proceed?",
                 "If a backup file is not selected, the metadata from the previous "
-                "run will be processed"
+                "run will be processed."
             )
             if not should_continue:
                 return
@@ -1015,7 +1015,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         conf = [conf_vars[option].get() for option in Conf]
 
         start_time = time.gmtime()
-        start_time_str = time.strftime("%Y%m%m_%H%M%S", start_time)
+        start_time_str = time.strftime("%Y%m%d_%H%M%S", start_time)
         pseudo_module_id = f"{start_var.get()}{end_var.get()}"
         logfile_name = f"{pseudo_module_id}_{start_time_str}.log"
         logfile_path = os.path.join(log_dir, logfile_name)
