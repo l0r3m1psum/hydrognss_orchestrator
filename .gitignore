@@ -139,3 +139,5 @@ logs/*
 !logs/.gitkeep
 *.db
 .DS_Store
+*.noindex
+*.nosync
