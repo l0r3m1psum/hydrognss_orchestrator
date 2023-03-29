@@ -311,13 +311,22 @@ class Args(typing.TypedDict):
     end: Proc
     pam: bool
     backup: str
+    log_level: int
 
 ARGS_DEFAULT: Args = {
     "start": Proc.L1A,
     "end": Proc.L1A,
     "pam": False,
     "backup": "",
+    "log_level": logging.INFO//10,
 }
+
+# Log Levels ###################################################################
+
+# The selectable levels are specified in the ICD document.
+LOG_LEVELS_FOR_DIPLAY = ["DEBUG", "INFO", "WARN",    "ERROR"]
+LOG_LEVELS_IEEC       = ["DEBUG", "INFO", "WARNING", "ERROR"]
+LOG_LEVELS_IFAC       = ["yes",   "yes",  "no",      "no"]
 
 ################################################################################
 # Code                                                                         #
@@ -332,6 +341,11 @@ def _enum_members_as_strings(e: enum.Enum) -> list[str]:
 def _escape_string(s: str) -> str:
     # f"{s!r}"[2:-2]
     return s.encode("unicode_escape").decode("utf-8")
+
+def _clamp(value, lower, upper):
+    value = max(value, lower)
+    value = min(value, upper)
+    return value
 
 # Implementation ###############################################################
 
@@ -367,6 +381,26 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
     assert validate_arguments(args)
     assert len(conf) == len(Conf)
 
+    data_dir = conf[Conf.DATA_DIR]
+    data_release_dir = os.path.join(data_dir, "DataRelease")
+    auxiliary_data_dir = os.path.join(data_dir, "Auxiliary_Data")
+
+    start = args["start"]
+    end = args["end"]
+    pam = args["pam"]
+    backup = args["backup"]
+    should_clean = bool(start == Proc.L1A or backup)
+    # Given the fact that Python allows you to create custom error levels here
+    # we just ignore the ones in between and the ones above and below them.
+    # Maybe we should throw an exception if we detect extraneous log levels.
+    log_level = args["log_level"]
+    log_level = _clamp(log_level, logging.DEBUG, logging.ERROR)
+    log_level = log_level//10
+
+    logger.setLevel(log_level*10)
+
+    # Doing some minimal validation here.
+
     if os.name != "nt":
         logger.info("skipping the run because we are not on windows")
         return
@@ -384,16 +418,6 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
             if not os.path.exists(subdir_path):
                 logger.warning(f"{conf[option]} does not contain {subdir} as a "
                     f"directory")
-
-    data_dir = conf[Conf.DATA_DIR]
-    data_release_dir = os.path.join(data_dir, "DataRelease")
-    auxiliary_data_dir = os.path.join(data_dir, "Auxiliary_Data")
-
-    start = args["start"]
-    end = args["end"]
-    pam = args["pam"]
-    backup = args["backup"]
-    should_clean = start == Proc.L1A or backup
 
     # This is used later to create the backup name and to give input to the PAM
     # and it is set either when loading a backup or when running HSAVERS.
@@ -444,6 +468,8 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
             raise Exception("unable to make backup archive") from ex
         if pam:
             logger.info("running the PAM")
+            # TODO: in the future here we need to run an additional PAM that is
+            #       just for L1B.
             run_processor(
                 conf[Conf.PAM_WORK_DIR],
                 conf[Conf.PAM_EXE],
@@ -614,14 +640,14 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
         run_processor(
             conf[Conf.L1B_CX_WORK_DIR],
             conf[Conf.L1B_CX_EXE],
-            f"-P {data_release_dir}"
+            f"-P {data_release_dir} --Log {LOG_LEVELS_IEEC[log_level]}"
         )
         logger.info("runnning L1B_CC")
         try:
             run_processor(
                 conf[Conf.L1B_CC_WORK_DIR],
                 conf[Conf.L1B_CC_EXE],
-                f"-P {data_release_dir}"
+                f"-P {data_release_dir}" # Is this done by IEEC too?
             )
         except Exception:
             logger.info("this processor failed but we allow the orchestrator to "
@@ -639,6 +665,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
     match end:
         case Proc.L2FT:
             logger.info("runnning L2FT")
+            # This does not support logging options apparently.
             run_processor(
                 conf[Conf.L2FT_WORK_DIR],
                 conf[Conf.L2FT_EXE],
@@ -651,16 +678,22 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
             run_processor(
                 conf[Conf.L2FB_WORK_DIR],
                 conf[Conf.L2FB_EXE],
-                f"{start_date} {end_date} {data_dir} yes"
+                f"{start_date} {end_date} {data_dir} {LOG_LEVELS_IFAC[log_level]}"
             )
             do_backup_and_pam()
             return
         case Proc.L2SM:
             logger.info("runnning L2SM")
+            # This does not support logging options apparently.
+            ProductTimeResolution = 1
+            HorizontalResolution = 25
+            signal = "L1"
+            polarization = "L"
             run_processor(
                 conf[Conf.L2SM_WORK_DIR],
                 conf[Conf.L2SM_EXE],
-                f"-input {data_dir} {start_date} {end_date} 1 25 L1 L"
+                f"-input {data_dir} {start_date} {end_date} "
+                f"{ProductTimeResolution} {HorizontalResolution} {signal} {polarization}"
             )
             do_backup_and_pam()
             return
@@ -670,7 +703,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
             run_processor(
                 conf[Conf.L2SI_WORK_DIR],
                 conf[Conf.L2SI_EXE],
-                f"-P {data_release_dir} -M {l2si_dir}"
+                f"-P {data_release_dir} -M {l2si_dir} --Log {LOG_LEVELS_IEEC[log_level]}"
             )
             do_backup_and_pam()
             return
@@ -710,11 +743,13 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         end = Proc(state_json["end"])
         pam = state_json["pam"]
         backup = state_json["backup"]
+        log_level = state_json["log_level"]
 
         # We delay all path valitions to the run function, since the default
         # that we give in case of error could also don't exist.
 
-        args: Args = {"start": start, "end": end, "pam": pam, "backup": backup}
+        args: Args = {"start": start, "end": end, "pam": pam, "backup": backup,
+            "log_level": log_level}
         if not validate_arguments(args):
             raise ValueError("the state file has an illegal configuration")
         del args
@@ -725,6 +760,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         end = Proc(ARGS_DEFAULT["end"])
         pam = ARGS_DEFAULT["pam"]
         backup = ARGS_DEFAULT["backup"]
+        log_level = ARGS_DEFAULT["log_level"]
 
     try:
         conf_json = json.load(config_file)
@@ -767,6 +803,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
                 "end": Proc[end_var.get()],
                 "pam": pam_var.get(),
                 "backup": backup_var.get(),
+                "log_level": log_level_combobox.current()
             }
             assert validate_arguments(res)
             logger.info("saving state file")
@@ -961,6 +998,19 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
     )
     backup_entry.grid(column=2, row=1, columnspan=3, pady=".5c", sticky="w")
 
+    log_level_label = tkinter.ttk.Label(orchestrator_frame, text="Log Level:")
+    log_level_label.grid(column=5, row=1, sticky="s")
+
+    log_level_var = tkinter.StringVar(root, LOG_LEVELS_FOR_DIPLAY[log_level], "log_level_var")
+    log_level_combobox = tkinter.ttk.Combobox(
+        orchestrator_frame,
+        textvariable=log_level_var,
+        values=LOG_LEVELS_FOR_DIPLAY,
+        state="readonly",
+        width=6
+    )
+    log_level_combobox.grid(column=5, row=2, sticky="n")
+
     def keep_ui_invariant(name1, name2, op):
         """https://tcl.tk/man/tcl8.5/TclCmd/trace.htm#M14"""
         start = Proc[start_var.get()]
@@ -1024,7 +1074,8 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         except Exception as ex:
             logger.exception("unable to create log file for this run")
         run_logger = logging.getLogger(f"{__name__}.run")
-        run_logger.setLevel(logging.INFO)
+        # The log level is setted internally in the run routune.
+        # run_logger.setLevel(logging.INFO)
         # If we run multiple simulations from the same window we keep appending
         # file handlers to the same {__name__}.run logger object, therefore we
         # append the log of the new simulation to the old files, which is bad.
@@ -1042,6 +1093,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
             "end": Proc[end_var.get()],
             "pam": pam_var.get(),
             "backup": backup_var.get(),
+            "log_level": log_level_combobox.current()
         }
         try:
             run(
