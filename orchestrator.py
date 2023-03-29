@@ -1070,7 +1070,8 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         logfile_name = f"{pseudo_module_id}_{start_time_str}.log"
         logfile_path = os.path.join(log_dir, logfile_name)
         try:
-            file_handler = logging.FileHandler(logfile_path)
+            file_handler = logging.FileHandler(logfile_path) if os.name == "nt" \
+                else logging.NullHandler()
         except Exception as ex:
             logger.exception("unable to create log file for this run")
         run_logger = logging.getLogger(f"{__name__}.run")
