@@ -318,7 +318,7 @@ ARGS_DEFAULT: Args = {
     "end": Proc.L1A,
     "pam": False,
     "backup": "",
-    "log_level": logging.INFO//10,
+    "log_level": logging.INFO//10 - 1,
 }
 
 # Log Levels ###################################################################
@@ -395,7 +395,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
     # Maybe we should throw an exception if we detect extraneous log levels.
     log_level = args["log_level"]
     log_level = _clamp(log_level, logging.DEBUG, logging.ERROR)
-    log_level = log_level//10
+    log_level = log_level//10 - 1
 
     logger.setLevel(log_level*10)
 
