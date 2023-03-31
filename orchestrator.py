@@ -318,7 +318,7 @@ ARGS_DEFAULT: Args = {
     "end": Proc.L1A,
     "pam": False,
     "backup": "",
-    "log_level": logging.INFO//10 - 1,
+    "log_level": logging.INFO//10 -1,
 }
 
 # Log Levels ###################################################################
@@ -342,10 +342,15 @@ def _escape_string(s: str) -> str:
     # f"{s!r}"[2:-2]
     return s.encode("unicode_escape").decode("utf-8")
 
-def _clamp(value, lower, upper):
-    value = max(value, lower)
-    value = min(value, upper)
-    return value
+def _convert_loglevel(level: int) -> int:
+    """Given the fact that Python allows you to create custom error levels here
+    we just ignore the ones in between and the ones above and below them.
+    Maybe we should throw an exception if we detect extraneous log levels."""
+    level = max(level, logging.DEBUG)
+    level = min(level, logging.ERROR)
+    level = level//10 - 1
+    assert logging.NOTSET == 0 and logging.DEBUG == 10
+    return level
 
 # Implementation ###############################################################
 
@@ -393,9 +398,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
     # Given the fact that Python allows you to create custom error levels here
     # we just ignore the ones in between and the ones above and below them.
     # Maybe we should throw an exception if we detect extraneous log levels.
-    log_level = args["log_level"]
-    log_level = _clamp(log_level, logging.DEBUG, logging.ERROR)
-    log_level = log_level//10 - 1
+    log_level = _convert_loglevel(args["log_level"])
 
     logger.setLevel(log_level*10)
 
