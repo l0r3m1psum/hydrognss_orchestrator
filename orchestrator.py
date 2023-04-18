@@ -342,16 +342,6 @@ def _escape_string(s: str) -> str:
     # f"{s!r}"[2:-2]
     return s.encode("unicode_escape").decode("utf-8")
 
-def _convert_loglevel(level: int) -> int:
-    """Given the fact that Python allows you to create custom error levels here
-    we just ignore the ones in between and the ones above and below them.
-    Maybe we should throw an exception if we detect extraneous log levels."""
-    level = max(level, logging.DEBUG)
-    level = min(level, logging.ERROR)
-    level = level//10 - 1
-    assert logging.NOTSET == 0 and logging.DEBUG == 10
-    return level
-
 # Implementation ###############################################################
 
 def validate_arguments(args: Args) -> bool:
@@ -398,9 +388,9 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
     # Given the fact that Python allows you to create custom error levels here
     # we just ignore the ones in between and the ones above and below them.
     # Maybe we should throw an exception if we detect extraneous log levels.
-    log_level = _convert_loglevel(args["log_level"])
+    log_level = args["log_level"]
 
-    logger.setLevel(log_level*10)
+    logger.setLevel((log_level+1)*10)
 
     # Doing some minimal validation here.
 
