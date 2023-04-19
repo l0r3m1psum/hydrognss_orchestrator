@@ -67,7 +67,7 @@ class Proc(enum.IntEnum):
     L2FB = enum.auto() # Forest Biomass
     L2FT = enum.auto() # Freeze/Thaw state
     L2SI = enum.auto() # Surface Inundation
-    L2SM = enum.auto() # Soil Mosture
+    L2SM = enum.auto() # Soil Moisture
 
 # The PAM (Performance Assesment Module) expects the names with this format.
 PROC_NAMES_PAM = ["L1_A", "L1_B", "L2_FB", "L2_FT", "L2_SI", "L2_SM",]
@@ -271,7 +271,7 @@ CONF_GROUP_NAME = [
     "Forest Biomass",
     "Freeze/Thaw state",
     "Surface Inundation",
-    "Soil Mosture",
+    "Soil Moisture",
     "Performance Assesment Module",
 ]
 assert len(ConfGroup) == len(CONF_GROUP_NAME)
