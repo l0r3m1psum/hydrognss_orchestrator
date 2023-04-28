@@ -483,19 +483,20 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
             try:
                 shutil.rmtree(pam_output)
             except Exception as ex:
-                # TODO: do not stop execution but continue running since it
-                # seems that the directory is always deleted.
+                logger.exception("an error occured while trying to delete the "
+                    f"{pam_output} directory, but we continue the execution")
                 # TODO: run "wmic process list" to see who is the guilty process
-                raise Exception("unable to delete {pam_output}") from ex
         logger.info("orchestration finished")
         print("\a", end='')
 
     if should_clean:
         logger.info("cleaning up from previous execution")
         if os.path.exists(data_release_dir):
-            shutil.rmtree(data_release_dir)
-            # TODO: do not stop execution but continue running since it
-            # seems that the directory is always deleted.
+            try:
+                shutil.rmtree(data_release_dir)
+            except Exception:
+                logger.exception("an error occured while trying to delete the "
+                    f"{data_release_dir} directory, but we continue the execution")
         try:
             os.mkdir(data_release_dir)
             os.mkdir(os.path.join(data_release_dir, "L1A_L1B"))
