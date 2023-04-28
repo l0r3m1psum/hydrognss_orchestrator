@@ -162,6 +162,7 @@ CONF_KINDS = [
 ]
 assert len(CONF_KINDS) == len(Conf)
 
+# TODO: updathe this with the new CC and CX.
 CONF_VALUES_DEFAULT = [
     "C:\\E2ES_backups",
     "C:\\PDGS_NAS_folder",
@@ -482,6 +483,9 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
             try:
                 shutil.rmtree(pam_output)
             except Exception as ex:
+                # TODO: do not stop execution but continue running since it
+                # seems that the directory is always deleted.
+                # TODO: run "wmic process list" to see who is the guilty process
                 raise Exception("unable to delete {pam_output}") from ex
         logger.info("orchestration finished")
         print("\a", end='')
@@ -490,6 +494,8 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
         logger.info("cleaning up from previous execution")
         if os.path.exists(data_release_dir):
             shutil.rmtree(data_release_dir)
+            # TODO: do not stop execution but continue running since it
+            # seems that the directory is always deleted.
         try:
             os.mkdir(data_release_dir)
             os.mkdir(os.path.join(data_release_dir, "L1A_L1B"))

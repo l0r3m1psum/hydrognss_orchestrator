@@ -3,7 +3,9 @@
 ## Prequisites
 
 The orchestator requires just a standard installation of
-[Python 3.10](https://www.python.org/downloads/release/python-3100/) to work.
+[Python 3.10](https://www.python.org/downloads/release/python-3100/) to work. It
+can run on both macOS (with limited functionalities needed for testing) and
+Windows 10, as well as Windows Server 2019.
 
 ## Installation
 
@@ -23,8 +25,8 @@ move <path to orchestrator.py> script
 ## Usage
 
 Assuming you have installed the Python interpreter correctly it is sufficient
-to run the `py orchestrator.py` command to lauch the orchestrator (of this
-command have to be launched from the directory in wich `orchestrator.py` is
+to run the `py orchestrator.py` command to launch the orchestrator (of this
+command have to be launched from the directory in which `orchestrator.py` is
 contained).
 
 Upon the first execution the orchestrator is going to emit two errors because it
@@ -36,6 +38,15 @@ button, doing the necessary changes, and the pressing `Save`, if this button is
 not pressed the configuration is still going to be used by the orchestrator but
 is not going to be saved on the main drive and therefore is not going to be
 loaded we you reopen the orchestrator.
+
+You can see the main window and the configuration windows down below.
+
+![The orchestrator window from which the simulations are started](Orchestrator_run.PNG "Main window")
+
+![The orchestrator window from which the paths of the processors are configured](Orchestrator_settings.PNG "Settings window")
+
+Both the previous state file and the configuration file are saved in
+`%LOCALAPPDATA%\Tor Vergata\HydroGNSS Orchestrator`.
 
 Once a simulation is started (by pressing the `Run!` button) the
 orchestrator's window is going to become unresponsive until the end of the
