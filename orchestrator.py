@@ -449,6 +449,17 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
             raise Exception(f"something went wrong during the execution of "
                 f"{file_path}") from ex
 
+    def check_existence_of_netcdf_file(start_dir: str):
+        walker = os.walk(
+            start_dir,
+            onerror=lambda ex: logger.exception("an error occured while traversing"
+                f"'{ex.filename}' we ignore it and keep going"))
+        for dirpath, dirnames, filenames in walker:
+            if any(filename.endswith(".nc") for filename in filenames):
+                return
+
+        raise Exception("no NetCDF file generated in '{start_dir}'")
+
     def do_backup_and_pam() -> None:
         timestamp = f"{int(time.time())}"
         assert len(timestamp) == 10
@@ -535,6 +546,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
             conf[Conf.L1A_EXE],
             ""
         )
+        check_existence_of_netcdf_file(os.path.join(data_release_dir, "L1A_L1B"))
 
         l1a_output_file = os.path.join(
             conf[Conf.L1A_WORK_DIR],
@@ -667,6 +679,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
                 conf[Conf.L2FT_EXE],
                 f"{start_date} {end_date}"
             )
+            check_existence_of_netcdf_file(os.path.join(data_release_dir, "L2OP-FT"))
             do_backup_and_pam()
             return
         case Proc.L2FB:
@@ -676,6 +689,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
                 conf[Conf.L2FB_EXE],
                 f"{start_date} {end_date} {data_dir} {LOG_LEVELS_IFAC[log_level]}"
             )
+            check_existence_of_netcdf_file(os.path.join(data_release_dir, "L2OP-FB"))
             do_backup_and_pam()
             return
         case Proc.L2SM:
@@ -691,6 +705,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
                 f"-input {data_dir} {start_date} {end_date} "
                 f"{ProductTimeResolution} {HorizontalResolution} {signal} {polarization}"
             )
+            check_existence_of_netcdf_file(os.path.join(data_release_dir, "L2OP-SSM"))
             do_backup_and_pam()
             return
         case Proc.L2SI:
@@ -701,6 +716,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
                 conf[Conf.L2SI_EXE],
                 f"-P {data_release_dir} -M {l2si_dir} --Log {LOG_LEVELS_IEEC[log_level]}"
             )
+            check_existence_of_netcdf_file(os.path.join(data_release_dir, "L2OP-SI"))
             do_backup_and_pam()
             return
         case other:
