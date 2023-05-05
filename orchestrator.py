@@ -480,23 +480,19 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
             except Exception as ex:
                 raise Exception("unable to add the PAM output figures to the "
                     "backup") from ex
-            try:
-                shutil.rmtree(pam_output)
-            except Exception as ex:
-                logger.exception("an error occured while trying to delete the "
-                    f"{pam_output} directory, but we continue the execution")
-                # TODO: run "wmic process list" to see who is the guilty process
+            shutil.rmtree(pam_output,
+                onerror=lambda function, path, excinfo: \
+                    logger.exception("error while trying to delete '{data_release_dir}'"))
+            # TODO: run "wmic process list" to see who is the guilty process
         logger.info("orchestration finished")
         print("\a", end='')
 
     if should_clean:
         logger.info("cleaning up from previous execution")
         if os.path.exists(data_release_dir):
-            try:
-                shutil.rmtree(data_release_dir)
-            except Exception:
-                logger.exception("an error occured while trying to delete the "
-                    f"{data_release_dir} directory, but we continue the execution")
+            shutil.rmtree(data_release_dir,
+                onerror=lambda function, path, excinfo: \
+                    logger.exception("error while trying to delete '{data_release_dir}'"))
         try:
             os.mkdir(data_release_dir)
             os.mkdir(os.path.join(data_release_dir, "L1A_L1B"))
