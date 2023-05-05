@@ -913,6 +913,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
     del var, entry, kind, dialog
     assert len(conf_vars) == len(Conf)
 
+    # TODO: use collections.deque to have a limited number of undo actions.
     last_value = None
     last_index = None
     def undo_config_change() -> None:
