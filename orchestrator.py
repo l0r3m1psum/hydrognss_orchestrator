@@ -496,7 +496,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
                     "backup") from ex
             shutil.rmtree(pam_output,
                 onerror=lambda function, path, excinfo: \
-                    logger.exception("error while trying to delete '{data_release_dir}'"))
+                    logger.exception("error while trying to delete '{pam_output}'"))
             # TODO: run "wmic process list" to see who is the guilty process
 
             if start <= Proc.L1B <= end: # If L1B was executed.
@@ -506,16 +506,22 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
                     os.path.join(conf[Conf.L1B_WORK_DIR], "compareL1B.exe"),
                     f"{backup_path_noext}.zip"
                 )
+                compare_tool_out_path = os.path.join(f"{conf[Conf.BACKUP_DIR]}",
+                        "compareL1B_output")
                 with zipfile.ZipFile(f"{backup_path_noext}.zip", 'a') as zipf:
-                    RR_plots_dir = f"{conf[Conf.BACKUP_DIR]}\\compareL1B_output\\{backup_name}_SSTLplots_1_RR"
-                    LR_plots_dir = f"{conf[Conf.BACKUP_DIR]}\\compareL1B_output\\{backup_name}_SSTLplots_1_LR"
+                    RR_plots_dir = os.path.join(compare_tool_out_path,
+                        f"{backup_name}_SSTLplots_1_RR")
+                    LR_plots_dir = os.path.join(compare_tool_out_path,
+                        f"{backup_name}_SSTLplots_1_LR")
                     for file in os.listdir(RR_plots_dir):
                         file_path = os.path.join(RR_plots_dir, file)
                         zipf.write(file_path, f"SSTLplots_1_RR\\{file}")
                     for file in os.listdir(LR_plots_dir):
                         file_path = os.path.join(LR_plots_dir, file)
                         zipf.write(file_path, f"SSTLplots_1_LR\\{file}")
-                # NOTE: should I remove the compareL1B_output directory?
+                shutil.rmtree(compare_tool_out_path,
+                    onerror=lambda function, path, excinfo: \
+                        logger.exception("error while trying to delete '{compare_tool_out_path}'"))
 
         logger.info("orchestration finished")
         print("\a", end='')
