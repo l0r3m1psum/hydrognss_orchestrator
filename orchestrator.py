@@ -27,6 +27,11 @@ not tackle it.
 
 # TODO: add a VERSION global so that it can be displayed in the window.
 
+# A possible solution to delete the directories is to use explorer.exe and put
+# them in the recycle bin.
+# https://stackoverflow.com/a/503768 (by invoking a PowerShell)
+# https://stackoverflow.com/a/70258061 (to use with ctypes)
+
 import enum
 import inspect
 import io
