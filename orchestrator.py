@@ -473,8 +473,6 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
             raise Exception("unable to make backup archive") from ex
         if pam:
             logger.info("running the PAM")
-            # TODO: in the future here we need to run an additional PAM that is
-            #       just for L1B.
             run_processor(
                 conf[Conf.PAM_WORK_DIR],
                 conf[Conf.PAM_EXE],
@@ -495,6 +493,25 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
                 onerror=lambda function, path, excinfo: \
                     logger.exception("error while trying to delete '{data_release_dir}'"))
             # TODO: run "wmic process list" to see who is the guilty process
+
+            if start <= Proc.L1B <= end: # If L1B was executed.
+                logger.info("running the compare tool")
+                run_processor(
+                    conf[Conf.L1B_WORK_DIR],
+                    os.path.join(conf[Conf.L1B_WORK_DIR], "compareL1B.exe"),
+                    f"{backup_path_noext}.zip"
+                )
+                with zipfile.ZipFile(f"{backup_path_noext}.zip", 'a') as zipf:
+                    RR_plots_dir = f"{conf[Conf.BACKUP_DIR]}\\compareL1B_output\\{backup_name}_SSTLplots_1_RR"
+                    LR_plots_dir = f"{conf[Conf.BACKUP_DIR]}\\compareL1B_output\\{backup_name}_SSTLplots_1_LR"
+                    for file in os.listdir(RR_plots_dir):
+                        file_path = os.path.join(RR_plots_dir, file)
+                        zipf.write(file_path, f"SSTLplots_1_RR\\{file}")
+                    for file in os.listdir(LR_plots_dir):
+                        file_path = os.path.join(LR_plots_dir, file)
+                        zipf.write(file_path, f"SSTLplots_1_LR\\{file}")
+                # NOTE: should I remove the compareL1B_output directory?
+
         logger.info("orchestration finished")
         print("\a", end='')
 
