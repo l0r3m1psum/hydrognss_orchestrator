@@ -501,9 +501,17 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
 
             if start <= Proc.L1B <= end: # If L1B was executed.
                 logger.info("running the compare tool")
+                # Wee peel of two files from the L1B executable path.
+                dir, _, _ = conf[Conf.L1B_EXE].rpartition("\\")
+                dir, _, _ = dir.rpartition("\\")
+                compare_L1B_wd = os.path.join(dir, "compare")
+                compare_L1B_exe = os.path.join(compare_L1B_wd, "compareL1B.exe")
+                if not os.path.isfile(compare_L1B_exe):
+                    logger.info("skipping compare L1B because it was not found")
+                    return
                 run_processor(
-                    conf[Conf.L1B_WORK_DIR],
-                    os.path.join(conf[Conf.L1B_WORK_DIR], "compareL1B.exe"),
+                    compare_L1B_wd,
+                    compare_L1B_exe,
                     f"{backup_path_noext}.zip"
                 )
                 compare_tool_out_path = os.path.join(f"{conf[Conf.BACKUP_DIR]}",
