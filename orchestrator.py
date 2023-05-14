@@ -574,7 +574,6 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
             conf[Conf.L1A_EXE],
             ""
         )
-        check_existence_of_netcdf_file(os.path.join(data_release_dir, "L1A_L1B"))
 
         l1a_output_file = os.path.join(
             conf[Conf.L1A_WORK_DIR],
@@ -625,6 +624,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
         except Exception as ex:
             raise Exception("unable to copy files for the PAM") from ex
 
+        check_existence_of_netcdf_file(os.path.join(data_release_dir, "L1A_L1B"))
         if end == Proc.L1A:
             do_backup_and_pam()
             return
