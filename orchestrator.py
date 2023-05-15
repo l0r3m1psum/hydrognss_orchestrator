@@ -33,6 +33,7 @@ not tackle it.
 # https://stackoverflow.com/a/70258061 (to use with ctypes)
 
 import enum
+import glob
 import inspect
 import io
 import json
@@ -502,10 +503,16 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
             if start <= Proc.L1B <= end: # If L1B was executed.
                 logger.info("running the compare tool")
                 # Wee peel of two files from the L1B executable path.
-                dir, _, _ = conf[Conf.L1B_EXE].rpartition("\\")
-                dir, _, _ = dir.rpartition("\\")
-                compare_L1B_wd = os.path.join(dir, "compare")
-                compare_L1B_exe = os.path.join(compare_L1B_wd, "compareL1B.exe")
+                should_be_bin, _, _ = conf[Conf.L1B_EXE].rpartition("\\")
+                should_be_L1B, _, _ = should_be_bin.rpartition("\\")
+                compare_L1B_exe = glob.glob('**/compareL1B.exe',
+                    root_dir=should_be_L1B, recursive=True)
+                if len(compare_L1B_exe) != 1:
+                    logger.info("skipping compare L1B because too many were found {compare_L1B_exe}")
+                    return
+                compare_L1B_exe = compare_L1B_exe[0]
+                compare_L1B_exe = os.path.join(should_be_L1B, compare_L1B_exe)
+                compare_L1B_wd, _, _ = compare_L1B_exe.rpartition("\\")
                 if not os.path.isfile(compare_L1B_exe):
                     logger.info("skipping compare L1B because it was not found")
                     return
