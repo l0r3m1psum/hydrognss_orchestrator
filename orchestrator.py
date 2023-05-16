@@ -221,45 +221,21 @@ CONF_DIALOG_TITLES = [
 ]
 assert len(CONF_DIALOG_TITLES) == len(Conf)
 
+# The directory structure that every processor should follow.
 PROCESSORS_SUBDIRS = [
     "bin", "conf", "doc", "log", "scripts", "src", "temp", "tests",
 ]
 
-# This are the subdirectories that must be in each directory of the
-# configuration options.
-CONF_SUBDIRS: list[typing.Optional[list[str]]] = [
-    [],
-    ["Auxiliary_Data", "ConfigurationFiles", "DataRelease"],
-    None,
-    [], # PROCESSORS_SUBDIRS,
-    None,
-    [], # PROCESSORS_SUBDIRS,
-    None,
-    [], # PROCESSORS_SUBDIRS,
-    None,
-    [], # PROCESSORS_SUBDIRS,
-    None,
-    [], # PROCESSORS_SUBDIRS,
-    None,
-    [], # PROCESSORS_SUBDIRS,
-    None,
-    [], # PROCESSORS_SUBDIRS,
-    None,
-    [], # PROCESSORS_SUBDIRS,
-    None,
-    [], # PROCESSORS_SUBDIRS,
-    None,
-    [], # PROCESSORS_SUBDIRS,
+# The directories that should always be in DataRelease.
+DATA_RELEASE_SUBDIRS = [
+    "L1A_L1B",
+    "L1A-SW-RX",
+    "L2OP-FB",
+    "L2OP-FT",
+    "L2OP-SI",
+    "L2OP-SSM",
+    "L2-FDI",
 ]
-assert len(CONF_SUBDIRS) == len(Conf)
-assert all(
-    iff(subdirs is None, kind == ConfKind.EXE)
-    for subdirs, kind in zip(CONF_SUBDIRS, CONF_KINDS)
-), "subdir is not different from None iff kind is not EXE"
-assert all(
-    iff(type(subdirs) == list, kind == ConfKind.DIR)
-    for subdirs, kind in zip(CONF_SUBDIRS, CONF_KINDS)
-), "subdir is not a list iff kind is DIR"
 
 class ConfGroup(enum.IntEnum):
     IO_DIR  = 0
@@ -405,19 +381,17 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
         logger.info("skipping the run because we are not on windows")
         return
 
-    # TODO: check that all path in conf exist and are of the right kind
-    # TODO: check that if it is truthy backup should be a path to an existing .zip
+    for file, kind in zip(conf, CONF_KINDS):
+        if not os.path.exists(file):
+            raise FileNotFoundError(file)
+        if kind == ConfKind.DIR and not os.path.isdir(file):
+            raise NotADirectoryError(file)
+        if kind == ConfKind.EXE and not os.path.isfile(file):
+            raise IsADirectoryError(file)
+    del file, kind
 
-    for option in Conf:
-        subdirs = CONF_SUBDIRS[option]
-        if not subdirs:
-            continue
-        for subdir in subdirs:
-            assert CONF_KINDS[option] == ConfKind.DIR
-            subdir_path = os.path.join(conf[option], subdir)
-            if not os.path.exists(subdir_path):
-                logger.warning(f"{conf[option]} does not contain {subdir} as a "
-                    f"directory")
+    if backup and not os.path.isfile(backup):
+        raise FileNotFoundError(backup)
 
     # This is used later to create the backup name and to give input to the PAM
     # and it is set either when loading a backup or when running HSAVERS.
@@ -429,7 +403,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
             else None
 
         if exe is None:
-            raise Exception(f"only python and exe files are supported, "
+            raise ValueError(f"only python and exe files are supported, "
                 f"{file_path} is not supported")
 
         # We expect %COMSPEC% to be cmd.exe or something like that.
@@ -450,7 +424,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
                     logger.info(line.rstrip())
 
                 if p.wait() != 0:
-                    raise Exception(f"{file_path} exited with error code {p.returncode}")
+                    raise ChildProcessError(f"{file_path} exited with error code {p.returncode}")
         except Exception as ex:
             raise Exception(f"something went wrong during the execution of "
                 f"{file_path}") from ex
@@ -464,7 +438,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
             if any(filename.endswith(".nc") for filename in filenames):
                 return
 
-        raise Exception("no NetCDF file generated in '{start_dir}'")
+        raise ChildProcessError("no NetCDF file generated in '{start_dir}'")
 
     def do_backup_and_pam() -> None:
         timestamp = f"{int(time.time())}"
