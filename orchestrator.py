@@ -325,6 +325,56 @@ def _escape_string(s: str) -> str:
     # f"{s!r}"[2:-2]
     return s.encode("unicode_escape").decode("utf-8")
 
+# Windows ######################################################################
+
+if os.name == 'nt':
+    import ctypes.wintypes
+
+    _In_, _Out_ = 1, 2
+
+    # https://learn.microsoft.com/en-us/windows/win32/api/shellapi/ns-shellapi-shfileopstructa
+    class SHFILEOPSTRUCTA(ctypes.Structure):
+        _fields_ = [
+            ("hwnd",                  ctypes.wintypes.HWND),
+            ("wFunc",                 ctypes.wintypes.UINT),
+            ("pFrom",                 ctypes.wintypes.LPCSTR), # PCZZSTR
+            ("pTo",                   ctypes.wintypes.LPCSTR), # PCZZSTR
+            ("fFlags",                ctypes.wintypes.UINT), # FILEOP_FLAGS
+            ("fAnyOperationsAborted", ctypes.wintypes.BOOL),
+            ("hNameMappings",         ctypes.wintypes.LPVOID),
+            ("lpszProgressTitle",     ctypes.wintypes.LPCSTR), # PCSTR
+       ]
+
+    # https://learn.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shfileoperationa
+    SHFileOperationA_prototype = ctypes.WINFUNCTYPE( # type: ignore
+        ctypes.c_int,
+        ctypes.POINTER(SHFILEOPSTRUCTA)
+    )
+    SHFileOperationA = SHFileOperationA_prototype(
+        ("SHFileOperationA", ctypes.cdll.shell32),
+        (
+            (_In_, "lpFileOp"),
+        )
+    )
+    FO_DELETE = 0x3
+    FOF_ALLOWUNDO = 0x40
+    FOF_NOCONFIRMATION = 0x10
+
+    def _recycle(path: str) -> int:
+        path_bytes = (path + "\0").encode()
+        file_op = SHFILEOPSTRUCTA(
+            None,
+            FO_DELETE,
+            ctypes.c_char_p(path_bytes),
+            None,
+            FOF_ALLOWUNDO | FOF_NOCONFIRMATION,
+            False,
+            None,
+            None
+        )
+        res = SHFileOperationA(ctypes.pointer(file_op))
+        return res
+
 # Implementation ###############################################################
 
 def validate_arguments(args: Args) -> bool:
@@ -469,9 +519,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
             except Exception as ex:
                 raise Exception("unable to add the PAM output figures to the "
                     "backup") from ex
-            shutil.rmtree(pam_output,
-                onerror=lambda function, path, excinfo: \
-                    logger.exception("error while trying to delete '{pam_output}'"))
+            _recycle(pam_output)
             # TODO: run "wmic process list" to see who is the guilty process
 
             if start <= Proc.L1B <= end: # If L1B was executed.
@@ -508,9 +556,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
                     for file in os.listdir(LR_plots_dir):
                         file_path = os.path.join(LR_plots_dir, file)
                         zipf.write(file_path, f"SSTLplots_1_LR\\{file}")
-                shutil.rmtree(compare_tool_out_path,
-                    onerror=lambda function, path, excinfo: \
-                        logger.exception("error while trying to delete '{compare_tool_out_path}'"))
+                _recycle(compare_tool_out_path)
 
         logger.info("orchestration finished")
         print("\a", end='')
@@ -518,18 +564,13 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
     if should_clean:
         logger.info("cleaning up from previous execution")
         if os.path.exists(data_release_dir):
-            shutil.rmtree(data_release_dir,
-                onerror=lambda function, path, excinfo: \
-                    logger.exception("error while trying to delete '{data_release_dir}'"))
+            _recycle(data_release_dir)
         try:
             os.mkdir(data_release_dir)
-            os.mkdir(os.path.join(data_release_dir, "L1A_L1B"))
-            os.mkdir(os.path.join(data_release_dir, "L2OP-FB"))
-            os.mkdir(os.path.join(data_release_dir, "L2OP-FT"))
-            os.mkdir(os.path.join(data_release_dir, "L2OP-SI"))
-            os.mkdir(os.path.join(data_release_dir, "L2OP-SSM"))
-            os.mkdir(os.path.join(data_release_dir, "L1A-SW-RX"))
-            os.mkdir(os.path.join(data_release_dir, "L2-FDI"))
+            for direc in DATA_RELEASE_SUBDIRS:
+                direc = os.path.join(data_release_dir, direc)
+                os.mkdir(direc)
+            del direc
         except Exception as ex:
             raise Exception("unable to create the directory structure") from ex
     else:
