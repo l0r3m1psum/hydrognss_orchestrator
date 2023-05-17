@@ -356,12 +356,19 @@ if os.name == 'nt':
             (_In_, "lpFileOp"),
         )
     )
+    def _check_SHFileOperationA_err(result, func, args):
+        if result != 0:
+            raise OSError()
+        return args
+    SHFileOperationA.errcheck = _check_SHFileOperationA_err
     FO_DELETE = 0x3
     FOF_ALLOWUNDO = 0x40
     FOF_NOCONFIRMATION = 0x10
 
-    def _recycle(path: str) -> int:
+    def _recycle(path: str) -> None:
         path_bytes = (path + "\0").encode()
+        # Some errors are written in fAnyOperationsAborted, but we do not check
+        # them...
         file_op = SHFILEOPSTRUCTA(
             None,
             FO_DELETE,
@@ -372,8 +379,10 @@ if os.name == 'nt':
             None,
             None
         )
-        res = SHFileOperationA(ctypes.pointer(file_op))
-        return res
+        SHFileOperationA(ctypes.pointer(file_op))
+
+# if os.mkdir creates problems:
+# https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shcreatedirectoryexa
 
 # Implementation ###############################################################
 
