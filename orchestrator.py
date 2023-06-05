@@ -1010,8 +1010,8 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
 
     # TODO: instead of using a button I should use a tkinter.Menu with save,
     #       import and export funcitonality.
-    save_button = tkinter.ttk.Button(settings_frame, text="Save",
-        command=save_config).grid(column=1, row=i+1, pady=".3c", stick="w")
+    tkinter.ttk.Button(settings_frame, text="Save", command=save_config) \
+        .grid(column=1, row=i+1, pady=".3c", stick="w")
 
     # Orchestrator Toplevel
 
