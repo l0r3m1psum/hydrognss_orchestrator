@@ -1004,6 +1004,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
             config_file.truncate(0)
             config_file.seek(0)
             config_file.write(res)
+            config_file.flush()
             logger.info("configuration saved")
         except OSError:
             logger.exception("unable to save the configuration file")
