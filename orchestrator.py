@@ -89,25 +89,15 @@ class Conf(enum.IntEnum):
     BACKUP_DIR      = 0
     DATA_DIR        = enum.auto()
     L1A_EXE         = enum.auto()
-    L1A_WORK_DIR    = enum.auto()
     L1B_EXE         = enum.auto()
-    L1B_WORK_DIR    = enum.auto()
     L1B_MM_EXE      = enum.auto()
-    L1B_MM_WORK_DIR = enum.auto()
     L1B_CX_EXE      = enum.auto()
-    L1B_CX_WORK_DIR = enum.auto()
     L1B_CC_EXE      = enum.auto()
-    L1B_CC_WORK_DIR = enum.auto()
     L2FB_EXE        = enum.auto()
-    L2FB_WORK_DIR   = enum.auto()
     L2FT_EXE        = enum.auto()
-    L2FT_WORK_DIR   = enum.auto()
     L2SI_EXE        = enum.auto()
-    L2SI_WORK_DIR   = enum.auto()
     L2SM_EXE        = enum.auto()
-    L2SM_WORK_DIR   = enum.auto()
     PAM_EXE         = enum.auto()
-    PAM_WORK_DIR    = enum.auto()
 
 class ConfKind(enum.Enum):
     """Which kind of path to expect in the configuration option."""
@@ -119,25 +109,15 @@ CONF_NAMES = [
     "Backup Directory",
     "Data Directory",
     "L1A Executable",
-    "L1A Working Dir.",
     "L1B Executable",
-    "L1B Working Dir.",
     "L1BMM Executable",
-    "L1BMM Working Dir.",
     "L1BCX Executable",
-    "L1BCX Working Dir.",
     "L1BCC Executable",
-    "L1BCC Working Dir.",
     "L2FB Executable",
-    "L2FB Working Dir.",
     "L2FT Executable",
-    "L2FT Working Dir.",
     "L2SI Executable",
-    "L2SI Working Dir.",
     "L2SM Executable",
-    "L2SM Working Dir.",
     "PAM Executable",
-    "PAM Working Dir.",
 ]
 assert len(CONF_NAMES) == len(Conf)
 
@@ -146,25 +126,15 @@ CONF_KINDS = [
     ConfKind.DIR,
     ConfKind.DIR,
     ConfKind.EXE,
-    ConfKind.DIR,
     ConfKind.EXE,
-    ConfKind.DIR,
     ConfKind.EXE,
-    ConfKind.DIR,
     ConfKind.EXE,
-    ConfKind.DIR,
     ConfKind.EXE,
-    ConfKind.DIR,
     ConfKind.EXE,
-    ConfKind.DIR,
     ConfKind.EXE,
-    ConfKind.DIR,
     ConfKind.EXE,
-    ConfKind.DIR,
     ConfKind.EXE,
-    ConfKind.DIR,
     ConfKind.EXE,
-    ConfKind.DIR,
 ]
 assert len(CONF_KINDS) == len(Conf)
 
@@ -173,25 +143,15 @@ CONF_VALUES_DEFAULT = [
     "C:\\E2ES_backups",
     "C:\\PDGS_NAS_folder",
     "C:\\L1A\\bin\\HSAVERS.exe",
-    "C:\\L1A\\bin",
     "C:\\L1BOP\\scripts\\Run_L1b_Processor_with_dates.py",
-    "C:\\L1BOP",
     "C:\\L1OP-MM\\scripts\\Run_L1Merge_with_dates.py",
-    "C:\\L1OP-MM",
     "C:\\L2OP-SI\\bin\\L1B_CX_DR.exe",
-    "C:\\L2OP-SI\\bin",
     "C:\\L2OP-SI\\bin\\L1B_CC_DR.exe",
-    "C:\\L2OP-SI\\bin",
     "C:\\L2OP-FB\\bin\\L2OP_FB.exe",
-    "C:\\L2OP-FB\\bin",
     "C:\\L2OP-FT\\bin\\L2PPFT_mainscript.exe",
-    "C:\\L2OP-FT\\bin",
     "C:\\L2OP-SI\\bin\\L2OP_SI_DR.exe",
-    "C:\\L2OP-SI\\bin",
     "C:\\L2OP-SSM\\bin\\SML2OP_start.exe",
-    "C:\\L2OP-SSM",
     "C:\\PAM\\bin\\PAM_start.exe",
-    "C:\\PAM",
 ]
 assert len(CONF_VALUES_DEFAULT) == len(Conf)
 
@@ -199,25 +159,15 @@ CONF_DIALOG_TITLES = [
     "Choose the backup directory",
     "Choose the main input output directory",
     "Choose the L1A executable",
-    "Choose the L1A working directory",
     "Choose the L1B executable",
-    "Choose the L1B working directory",
     "Choose the L1B merge module executable",
-    "Choose the L1B merge module working directory",
     "Choose the L1B CX executable",
-    "Choose the L1B CX working directory",
     "Choose the L1B CC executable",
-    "Choose the L1B CC working directory",
     "Choose the L2FB executable",
-    "Choose the L2FB working directory",
     "Choose the L2FT executable",
-    "Choose the L2FT working directory",
     "Choose the L2SI executable",
-    "Choose the L2SI working directory",
     "Choose the L2SM executable",
-    "Choose the L2SM working directory",
     "Choose the PAM executable",
-    "Choose the PAM working directory",
 ]
 assert len(CONF_DIALOG_TITLES) == len(Conf)
 
@@ -263,24 +213,14 @@ CONF_GROUP = [
     ConfGroup.IO_DIR,
     ConfGroup.IO_DIR,
     ConfGroup.L1A,
-    ConfGroup.L1A,
-    ConfGroup.L1B,
-    ConfGroup.L1B,
-    ConfGroup.L1B,
-    ConfGroup.L1B,
     ConfGroup.L1B,
     ConfGroup.L1B,
     ConfGroup.L1B,
     ConfGroup.L1B,
     ConfGroup.L2FB,
-    ConfGroup.L2FB,
-    ConfGroup.L2FT,
     ConfGroup.L2FT,
     ConfGroup.L2SI,
-    ConfGroup.L2SI,
     ConfGroup.L2SM,
-    ConfGroup.L2SM,
-    ConfGroup.PAM,
     ConfGroup.PAM,
 ]
 assert len(Conf) == len(CONF_GROUP)
@@ -456,7 +396,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
     # and it is set either when loading a backup or when running HSAVERS.
     experiment_name = None
 
-    def run_processor(working_dir: str, file_path: str, arguments: str) -> None:
+    def run_processor(file_path: str, arguments: str) -> None:
         exe = file_path if file_path.endswith(".exe") \
             else f"py {file_path}" if file_path.endswith(".py") \
             else None
@@ -464,6 +404,8 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
         if exe is None:
             raise ValueError(f"only python and exe files are supported, "
                 f"{file_path} is not supported")
+
+        working_dir, _, _ = file_path.rpartition('\\')
 
         # We expect %COMSPEC% to be cmd.exe or something like that.
         try:
@@ -513,7 +455,6 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
         if pam:
             logger.info("running the PAM")
             run_processor(
-                conf[Conf.PAM_WORK_DIR],
                 conf[Conf.PAM_EXE],
                 f"{PROC_NAMES_PAM[end]} {auxiliary_data_dir} "
                 f"{conf[Conf.BACKUP_DIR]} {backup_name}"
@@ -543,12 +484,10 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
                     return
                 compare_L1B_exe = compare_L1B_exe[0]
                 compare_L1B_exe = os.path.join(should_be_L1B, compare_L1B_exe)
-                compare_L1B_wd, _, _ = compare_L1B_exe.rpartition("\\")
                 if not os.path.isfile(compare_L1B_exe):
                     logger.info("skipping compare L1B because it was not found")
                     return
                 run_processor(
-                    compare_L1B_wd,
                     compare_L1B_exe,
                     f"{backup_path_noext}.zip"
                 )
@@ -609,13 +548,13 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
     if start == Proc.L1A:
         logger.info("runnning L1A")
         run_processor(
-            conf[Conf.L1A_WORK_DIR],
             conf[Conf.L1A_EXE],
             ""
         )
 
+        l1a_work_dir, _, _ = conf[Conf.L1A_EXE].rpartition('\\')
         l1a_output_file = os.path.join(
-            conf[Conf.L1A_WORK_DIR],
+            l1a_work_dir,
             "..\conf\AbsoluteFilePath.txt"
         )
         try:
@@ -701,26 +640,22 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
     if start == Proc.L1A or start == Proc.L1B:
         logger.info("runnning L1B")
         run_processor(
-            conf[Conf.L1B_WORK_DIR],
             conf[Conf.L1B_EXE],
             f"{start_date} {end_date}"
         )
         logger.info("runnning L1B_MM")
         run_processor(
-            conf[Conf.L1B_MM_WORK_DIR],
             conf[Conf.L1B_MM_EXE],
             f"{start_date} {end_date}"
         )
         logger.info("runnning L1B_CX")
         run_processor(
-            conf[Conf.L1B_CX_WORK_DIR],
             conf[Conf.L1B_CX_EXE],
             f"-P {data_release_dir} --Log {LOG_LEVELS_IEEC[log_level]}"
         )
         logger.info("runnning L1B_CC")
         try:
             run_processor(
-                conf[Conf.L1B_CC_WORK_DIR],
                 conf[Conf.L1B_CC_EXE],
                 f"-P {data_release_dir}" # Is this done by IEEC too?
             )
@@ -729,7 +664,6 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
                 "contine the execution as Gabrielle asked.")
         logger.info("runnning L1B_MM again")
         run_processor(
-            conf[Conf.L1B_MM_WORK_DIR],
             conf[Conf.L1B_MM_EXE],
             f"{start_date} {end_date}"
         )
@@ -742,7 +676,6 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
             logger.info("runnning L2FT")
             # This does not support logging options apparently.
             run_processor(
-                conf[Conf.L2FT_WORK_DIR],
                 conf[Conf.L2FT_EXE],
                 f"{start_date} {end_date}"
             )
@@ -752,7 +685,6 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
         case Proc.L2FB:
             logger.info("runnning L2FB")
             run_processor(
-                conf[Conf.L2FB_WORK_DIR],
                 conf[Conf.L2FB_EXE],
                 f"{start_date} {end_date} {data_dir} {LOG_LEVELS_IFAC[log_level]}"
             )
@@ -767,7 +699,6 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
             signal = "L1"
             polarization = "L"
             run_processor(
-                conf[Conf.L2SM_WORK_DIR],
                 conf[Conf.L2SM_EXE],
                 f"-input {data_dir} {start_date} {end_date} "
                 f"{ProductTimeResolution} {HorizontalResolution} {signal} {polarization}"
@@ -779,7 +710,6 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
             logger.info("runnning L2SI")
             l2si_dir = os.path.join(auxiliary_data_dir, "L2OP-SI")
             run_processor(
-                conf[Conf.L2SI_WORK_DIR],
                 conf[Conf.L2SI_EXE],
                 f"-P {data_release_dir} -M {l2si_dir} --Log {LOG_LEVELS_IEEC[log_level]}"
             )
