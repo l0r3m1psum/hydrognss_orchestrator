@@ -27,11 +27,6 @@ not tackle it.
 
 # TODO: add a VERSION global so that it can be displayed in the window.
 
-# A possible solution to delete the directories is to use explorer.exe and put
-# them in the recycle bin.
-# https://stackoverflow.com/a/503768 (by invoking a PowerShell)
-# https://stackoverflow.com/a/70258061 (to use with ctypes)
-
 import enum
 import glob
 import inspect
@@ -307,7 +302,7 @@ ARGS_DEFAULT: Args = {
 # Log Levels ###################################################################
 
 # The selectable levels are specified in the ICD document.
-LOG_LEVELS_FOR_DIPLAY = ["DEBUG", "INFO", "WARN",    "ERROR"]
+LOG_LEVELS_FOR_DISPLAY = ["DEBUG", "INFO", "WARN",    "ERROR"]
 LOG_LEVELS_IEEC       = ["DEBUG", "INFO", "WARNING", "ERROR"]
 LOG_LEVELS_IFAC       = ["yes",   "yes",  "no",      "no"]
 
@@ -1082,11 +1077,11 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
     log_level_label = tkinter.ttk.Label(orchestrator_frame, text="Log Level:")
     log_level_label.grid(column=5, row=1, sticky="s")
 
-    log_level_var = tkinter.StringVar(root, LOG_LEVELS_FOR_DIPLAY[log_level], "log_level_var")
+    log_level_var = tkinter.StringVar(root, LOG_LEVELS_FOR_DISPLAY[log_level], "log_level_var")
     log_level_combobox = tkinter.ttk.Combobox(
         orchestrator_frame,
         textvariable=log_level_var,
-        values=LOG_LEVELS_FOR_DIPLAY,
+        values=LOG_LEVELS_FOR_DISPLAY,
         state="readonly",
         width=6
     )
