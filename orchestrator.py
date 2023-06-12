@@ -786,7 +786,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
 
         # Again we delay the path validation.
 
-        conf = list(conf_json.values())
+        conf = [conf_json[key.name] for key in Conf] # We read only the keys that we need.
     except (json.JSONDecodeError, KeyError, TypeError):
         logger.exception("an error occured while reading the configuration file"
             "using the default one instead")
