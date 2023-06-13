@@ -848,7 +848,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
     settings_label_frames = []
     for group in ConfGroup:
         settings_label_frame = tkinter.ttk.LabelFrame(settings_frame,
-            text=CONF_GROUP_NAME[group])
+            text=CONF_GROUP_NAME[group], labelanchor="n")
         settings_label_frames.append(settings_label_frame)
     del settings_label_frame
 
