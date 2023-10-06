@@ -23,6 +23,19 @@ various it file system atomicity problems, it expects to be the only one to
 operate on the various files and directories. Solving this problem is hard and
 since this orchestrator is meant to be executed in trusted environments we did
 not tackle it.
+
+Things that I would do better next time:
+  * Do not rely too much on Python's shutil for archives since for validation
+    and custom insertion logic I still have to write my own functions;
+  * Do not nest functions definitions.
+  * Use a global logger object.
+  * Move around directories this shortens a lot of paths and at least makes sure
+    that the directory that I'm in can't be deleted.
+  * Parse an in memory CSV of the various conf defaults etc... And generate at
+    startup the various lists, since the "inpact on startup performance" is
+    really negligible.
+  * use pathlib.Path to give a type to pats that is different from str.
+  * create an enum for HydroGNSS-1 or HydroGNSS-2??
 """
 
 # TODO: add a VERSION global so that it can be displayed in the window.
@@ -74,9 +87,20 @@ class Proc(enum.IntEnum):
 PROC_NAMES_PAM = ["L1_A", "L1_B", "L2_FB", "L2_FT", "L2_SI", "L2_SM",]
 assert len(Proc) == len(PROC_NAMES_PAM)
 
+# Where the various processors should put their outputs.
+PROC_OUTPUT_DIRS = [
+    "L1A_L1B",
+    "L1A_L1B",
+    "L2OP-FB",
+    "L2OP-FT",
+    "L2OP-SI",
+    "L2OP-SSM",
+]
+assert len(Proc) == len(PROC_OUTPUT_DIRS)
+
 # Configuration of the variuous processors #####################################
 # Here we define a big table (the lists here defined are its rows) with all the
-# usefull information about the paths that are neede by the various processors.
+# usefull information about the paths that are needed by the various processors.
 
 class Conf(enum.IntEnum):
     """All the paths that can be configured. The name in the enumaration is also
@@ -133,7 +157,6 @@ CONF_KINDS = [
 ]
 assert len(CONF_KINDS) == len(Conf)
 
-# TODO: updathe this with the new CC and CX.
 CONF_VALUES_DEFAULT = [
     "C:\\E2ES_backups",
     "C:\\PDGS_NAS_folder",
@@ -165,22 +188,6 @@ CONF_DIALOG_TITLES = [
     "Choose the PAM executable",
 ]
 assert len(CONF_DIALOG_TITLES) == len(Conf)
-
-# The directory structure that every processor should follow.
-PROCESSORS_SUBDIRS = [
-    "bin", "conf", "doc", "log", "scripts", "src", "temp", "tests",
-]
-
-# The directories that should always be in DataRelease.
-DATA_RELEASE_SUBDIRS = [
-    "L1A_L1B",
-    "L1A-SW-RX",
-    "L2OP-FB",
-    "L2OP-FT",
-    "L2OP-SI",
-    "L2OP-SSM",
-    "L2-FDI",
-]
 
 class ConfGroup(enum.IntEnum):
     IO_DIR  = 0
@@ -220,6 +227,31 @@ CONF_GROUP = [
 ]
 assert len(Conf) == len(CONF_GROUP)
 
+# NOTE: can I delete this?
+# The directories that should always be in DataRelease.
+DATA_RELEASE_SUBDIRS = [
+    "L1A_L1B",
+    "L1A-SW-RX",
+    "L2OP-FB",
+    "L2OP-FT",
+    "L2OP-SI",
+    "L2OP-SSM",
+    "L2-FDI",
+]
+
+# Log Levels ###################################################################
+
+class LogLevel(enum.IntEnum):
+    DEBUG = 0
+    INFO = enum.auto()
+    WARN = enum.auto()
+    ERROR = enum.auto()
+
+# The selectable levels are specified in the ICD document.
+LOG_LEVELS_FOR_DISPLAY = ["DEBUG", "INFO", "WARN",    "ERROR"]
+LOG_LEVELS_IEEC       = ["DEBUG", "INFO", "WARNING", "ERROR"]
+LOG_LEVELS_IFAC       = ["yes",   "yes",  "no",      "no"]
+
 # Arguments ####################################################################
 
 class Args(typing.TypedDict):
@@ -229,22 +261,15 @@ class Args(typing.TypedDict):
     end: Proc
     pam: bool
     backup: str
-    log_level: int
+    log_level: LogLevel
 
 ARGS_DEFAULT: Args = {
     "start": Proc.L1A,
     "end": Proc.L1A,
     "pam": False,
     "backup": "",
-    "log_level": logging.INFO//10 -1,
+    "log_level": LogLevel.INFO,
 }
-
-# Log Levels ###################################################################
-
-# The selectable levels are specified in the ICD document.
-LOG_LEVELS_FOR_DISPLAY = ["DEBUG", "INFO", "WARN",    "ERROR"]
-LOG_LEVELS_IEEC       = ["DEBUG", "INFO", "WARNING", "ERROR"]
-LOG_LEVELS_IFAC       = ["yes",   "yes",  "no",      "no"]
 
 ################################################################################
 # Code                                                                         #
@@ -259,6 +284,11 @@ def _enum_members_as_strings(e: enum.Enum) -> list[str]:
 def _escape_string(s: str) -> str:
     # f"{s!r}"[2:-2]
     return s.encode("unicode_escape").decode("utf-8")
+
+_experiment_name_format = re.compile(
+    "_[0-9]{2}-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-[0-9]{4}_[0-9]{2}_[0-9]{2}_[0-9]{2}$"
+)
+
 
 # Windows ######################################################################
 
@@ -316,7 +346,7 @@ if os.name == 'nt':
         )
         SHFileOperationA(ctypes.pointer(file_op))
 
-# if os.mkdir creates problems:
+# if os.mkdir ever creates problems:
 # https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shcreatedirectoryexa
 
 # Implementation ###############################################################
@@ -346,6 +376,7 @@ def validate_arguments(args: Args) -> bool:
 
 assert validate_arguments(ARGS_DEFAULT)
 
+# NOTE: more than 'conf' the name should be 'conf_paths'
 def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
     """If anything goes wrong this function throws an exception with an
     explenation of what went wrong."""
@@ -354,8 +385,20 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
     assert len(conf) == len(Conf)
 
     data_dir = conf[Conf.DATA_DIR]
-    data_release_dir = os.path.join(data_dir, "DataRelease")
     auxiliary_data_dir = os.path.join(data_dir, "Auxiliary_Data")
+    hydrognss_1_dir = os.path.join(data_dir, "HydroGNSS-1")
+    hydrognss_2_dir = os.path.join(data_dir, "HydroGNSS-2")
+
+    # This is used later to create the backup name and to give input to the PAM
+    # and it is set either when loading a backup or when running HSAVERS.
+    experiment_name = ""
+
+    # Assigned later
+    which_hydrognss = "" # will be either "HydroGNSS-1" or "HydroGNSS-2"
+    hydrognss_dir = lambda: os.path.join(data_dir, which_hydrognss)
+    data_release_dir = lambda: os.path.join(hydrognss_dir(), "DataRelease")
+    l1a_l1b_dir = lambda: os.path.join(data_release_dir(), "L1A_L1B")
+    experiment_name_file = lambda: os.path.join(data_release_dir(), "experiment_name.txt")
 
     start = args["start"]
     end = args["end"]
@@ -367,6 +410,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
     # Maybe we should throw an exception if we detect extraneous log levels.
     log_level = args["log_level"]
 
+    # We convert our log level number to Python's standard library log level number.
     logger.setLevel((log_level+1)*10)
 
     # Doing some minimal validation here.
@@ -386,10 +430,6 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
 
     if backup and not os.path.isfile(backup):
         raise FileNotFoundError(backup)
-
-    # This is used later to create the backup name and to give input to the PAM
-    # and it is set either when loading a backup or when running HSAVERS.
-    experiment_name = None
 
     def run_processor(file_path: str, arguments: str) -> None:
         exe = file_path if file_path.endswith(".exe") \
@@ -416,8 +456,14 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
                 ) as p:
                 assert p.stdout is not None # Just for mypy.
                 for line in p.stdout:
-                    # TODO: do something sensible for lines that end with just \r
+                    # Since in io.TextIOBase lines are split on '\n' it there are
+                    # any \r in the sequence we just ignore it.
                     logger.info(line.rstrip())
+                    # TODO: Sometimes the output seems to stop in the console
+                    # until you press enter it is the so called "mark mode" and
+                    # it can be programmatically detected and disabled.
+                    # https://stackoverflow.com/questions/13599822/command-prompt-gets-stuck-and-continues-on-enter-key-press
+                    # https://stackoverflow.com/questions/41409727/turn-off-windows-10-console-mark-mode-from-my-application
 
                 if p.wait() != 0:
                     raise ChildProcessError(f"{file_path} exited with error code {p.returncode}")
@@ -434,17 +480,18 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
             if any(filename.endswith(".nc") for filename in filenames):
                 return
 
-        raise ChildProcessError("no NetCDF file generated in '{start_dir}'")
+        raise ChildProcessError(f"no NetCDF file generated in '{start_dir}'")
 
     def do_backup_and_pam() -> None:
         timestamp = f"{int(time.time())}"
         assert len(timestamp) == 10
         assert experiment_name
+        assert which_hydrognss
         backup_name = f"{experiment_name}_{timestamp}"
         backup_path_noext = os.path.join(conf[Conf.BACKUP_DIR], backup_name)
         logger.info("doing the backup")
         try:
-            shutil.make_archive(backup_path_noext, "zip", data_release_dir)
+            shutil.make_archive(backup_path_noext, "zip", data_dir, which_hydrognss)
         except Exception as ex:
             raise Exception("unable to make backup archive") from ex
         if pam:
@@ -460,19 +507,18 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
                 with zipfile.ZipFile(f"{backup_path_noext}.zip", 'a') as zipf:
                     for file in os.listdir(pam_output):
                         file_path = os.path.join(pam_output, file)
-                        zipf.write(file_path, f"PAM_Output\\{file}")
+                        zipf.write(file_path, f"{which_hydrognss}\\DataRelease\\PAM_Output\\{file}")
             except Exception as ex:
                 raise Exception("unable to add the PAM output figures to the "
                     "backup") from ex
             _recycle(pam_output)
-            # TODO: run "wmic process list" to see who is the guilty process
 
             if start <= Proc.L1B <= end: # If L1B was executed.
                 logger.info("running the compare tool")
                 # Wee peel of two files from the L1B executable path.
                 should_be_bin, _, _ = conf[Conf.L1B_EXE].rpartition("\\")
                 should_be_L1B, _, _ = should_be_bin.rpartition("\\")
-                compare_L1B_exe = glob.glob('**/compareL1B.exe',
+                compare_L1B_exe: typing.Union[list[str], str] = glob.glob('**/compareL1B.exe',
                     root_dir=should_be_L1B, recursive=True)
                 if len(compare_L1B_exe) != 1:
                     logger.info("skipping compare L1B because too many were found {compare_L1B_exe}")
@@ -493,60 +539,71 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
                         f"{backup_name}_SSTLplots_1_RR")
                     LR_plots_dir = os.path.join(compare_tool_out_path,
                         f"{backup_name}_SSTLplots_1_LR")
-                    # TODO: check for listdir failure since directories may not exist
                     try:
                         for file in os.listdir(RR_plots_dir):
                             file_path = os.path.join(RR_plots_dir, file)
-                            zipf.write(file_path, f"SSTLplots_1_RR\\{file}")
+                            zipf.write(file_path, f"{which_hydrognss}\\DataRelease\\SSTLplots_1_RR\\{file}")
                     except FileNotFoundError:
                         logger.exception("an error occurred while putting RR in the backup")
                     try:
                         for file in os.listdir(LR_plots_dir):
                             file_path = os.path.join(LR_plots_dir, file)
-                            zipf.write(file_path, f"SSTLplots_1_LR\\{file}")
+                            zipf.write(file_path, f"{which_hydrognss}\\DataRelease\\SSTLplots_1_LR\\{file}")
                     except FileNotFoundError:
                         logger.exception("an error occurred while putting LR in the backup")
                 _recycle(compare_tool_out_path)
 
         logger.info("orchestration finished")
-        # TODO: it would be cool to send a notificaiton:
+        # NOTE: it would be cool to send a notificaiton:
         # https://github.com/jithurjacob/Windows-10-Toast-Notifications/blob/master/win10toast/__init__.py
         # https://learn.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shell_notifyicona
         print("\a", end='')
 
     if should_clean:
         logger.info("cleaning up from previous execution")
-        if os.path.exists(data_release_dir):
-            _recycle(data_release_dir)
-        try:
-            os.mkdir(data_release_dir)
-            for direc in DATA_RELEASE_SUBDIRS:
-                direc = os.path.join(data_release_dir, direc)
-                os.mkdir(direc)
-            del direc
-        except Exception as ex:
-            raise Exception("unable to create the directory structure") from ex
+        if os.path.exists(hydrognss_1_dir):
+            _recycle(hydrognss_1_dir)
+        if os.path.exists(hydrognss_2_dir):
+            _recycle(hydrognss_2_dir)
+        if backup:
+            backup_name_format = re.compile("_[0-9]{10}\.zip$")
+            experiment_name = backup_name_format.sub("", backup).split("\\")[-1]
+            if experiment_name == backup:
+                raise Exception("invalud backup file selected")
+            logger.info("loading the backup")
+            with zipfile.ZipFile(backup) as zipf:
+                name_list = zipf.namelist()
+                if name_list[0].startswith("HydroGNSS-1"):
+                    which_hydrognss = "HydroGNSS-1"
+                elif name_list[0].startswith("HydroGNSS-2"):
+                    which_hydrognss = "HydroGNSS-2"
+                else:
+                    raise ValueError("the backup contains a bad file: {name_list[0]!r}")
+                if not all(name.startswith(which_hydrognss) for name in name_list):
+                    raise ValueError("not all the files in the backup are in "
+                        "the {which_hydrognss} directory")
+                if os.path.exists(hydrognss_1_dir) and os.path.exists(hydrognss_2_dir):
+                    raise Exception("Both HydroGNSS-1 and HydroGNSS-2 are present. Please "
+                        "delete one of the two.")
+            try:
+                shutil.unpack_archive(backup, data_dir)
+            except Exception as ex:
+                raise Exception("unable to extract the backup") from ex
     else:
+        if os.path.exists(hydrognss_1_dir) and os.path.exists(hydrognss_2_dir):
+            raise Exception("Both HydroGNSS-1 and HydroGNSS-2 are present. Please "
+                "delete one of the two.")
+        which_hydrognss = "HydroGNSS-1" if os.path.exists(hydrognss_1_dir) \
+            else "HydroGNSS-2"
         try:
-            with open(os.path.join(data_release_dir, "experiment_name.txt")) as f:
-                experiment_name = f.read().strip() # TODO: validate
+            with open(os.path.join(data_release_dir(), "experiment_name.txt")) as f:
+                experiment_name = f.read().strip()
         except Exception as ex:
             raise Exception("unable to read the experiment name from the file") from ex
+        if not _experiment_name_format.search(experiment_name):
+            raise ValueError("the experiment name does not have the correct "
+                "format in the experiment_name.txt file")
         logger.info("keeping the data release directory of the previous execution")
-
-    if backup:
-        assert should_clean
-        backup_name_format = re.compile("_[0-9]{10}\.zip$")
-        experiment_name = backup_name_format.sub("", backup).split("\\")[-1]
-        if experiment_name == backup:
-            raise Exception("invalud backup file selected")
-        logger.info("loading the backup")
-        # TODO: do a partial validation of the contents of the archive like the
-        #       firts level of directories in data_release_dir (ZipFile.getinfo()).
-        try:
-            shutil.unpack_archive(backup, data_release_dir)
-        except Exception as ex:
-            raise Exception("unable to extract the backup") from ex
 
     # The actual "orchestration" starts here.
 
@@ -573,66 +630,72 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
                 f"L1A produced output in a non existing directory: {l1a_out}"
             )
 
-        experiment_name_format = re.compile("_[0-9]{2}-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-[0-9]{4}_[0-9]{2}_[0-9]{2}_[0-9]{2}$")
+        which_hydrognss = list(filter(None, l1a_out.split("\\")))[-1]
+        if which_hydrognss != "HydroGNSS-1" and which_hydrognss != "HydroGNSS-2":
+            raise ValueError("HSAVERS did not put the satellite in the path '{l1a_out}'")
         experiment_name = list(filter(None, l1a_out.split("\\")))[-2]
-        if not experiment_name_format.search(experiment_name):
-            raise Exception("the L1A output directory has not the correct format")
+        if not _experiment_name_format.search(experiment_name):
+            raise ValueError("the L1A output directory has not the correct format")
+
+        try:
+            os.mkdir(hydrognss_dir())
+            for direc in DATA_RELEASE_SUBDIRS:
+                direc = os.path.join(data_release_dir(), direc)
+                os.makedirs(direc)
+            del direc
+        except Exception as ex:
+            raise Exception("unable to create the directory structure") from ex
 
         # This is needed for when not should_clean, so that the PAM can read the
         # appropriate file from the PAM directory in the backup folder.
         try:
-            with open(os.path.join(data_release_dir, "experiment_name.txt"), 'w') as f:
+            with open(os.path.join(data_release_dir(), "experiment_name.txt"), 'w') as f:
                 f.write(experiment_name)
         except Exception as ex:
             raise Exception("unable to write the experiment name in the file") from ex
 
-        l1a_out_dir = os.path.join(l1a_out, "DataRelease\L1A_L1B")
+        l1a_out_dir = os.path.join(l1a_out, f"DataRelease\\{PROC_OUTPUT_DIRS[Proc.L1A]}")
         try:
-            shutil.copytree(l1a_out_dir, os.path.join(data_release_dir, "L1A_L1B"), dirs_exist_ok=True)
+            shutil.copytree(l1a_out_dir, l1a_l1b_dir(), dirs_exist_ok=True)
         except Exception as ex:
             raise Exception("unable to copy {l1a_out_dir} to "
-                "{data_release_dir}") from ex
+                "{data_release_dir()}") from ex
 
         # The last 21 characters are the ones of the timestamp.
         l1a_file_for_pam = os.path.join(l1a_out,
             f"{experiment_name[:-21]}_inOutReferenceFile.mat")
 
         try:
-            # This code is commented-out because it was needed before but now
-            # is not. We keep it arround just in case something has to change
-            # back...
-            # shutil.copy2(l1a_file_for_pam, os.path.join(conf[Conf.BACKUP_DIR],
-            #     f"PAM\\{experiment_name}.mat"))
-            shutil.copy2(l1a_file_for_pam, data_release_dir)
+            shutil.copy2(l1a_file_for_pam, data_release_dir())
         except Exception as ex:
             raise Exception("unable to copy files for the PAM") from ex
 
-        check_existence_of_netcdf_file(os.path.join(data_release_dir, "L1A_L1B"))
+        check_existence_of_netcdf_file(l1a_l1b_dir())
         if end == Proc.L1A:
             do_backup_and_pam()
             return
 
     assert experiment_name, "This variable should have been assigned by now"
+    assert which_hydrognss, "This variable should have been assigned by now"
 
     logger.info("detecting the dates of the simulation")
     try:
         year_month_format = re.compile("^[0-9]{4}-[0-9]{2}$")
         day_format = re.compile("^[0-9]{2}$")
-        l1a_l1b_dir = os.path.join(data_release_dir, "L1A_L1B")
 
-        year_month_list = sorted(os.listdir(l1a_l1b_dir))
+        year_month_list = sorted(os.listdir(l1a_l1b_dir()))
         if not all(year_month_format.search(year_month) for year_month in year_month_list):
             raise Exception("there are files which are not directories of year and month of the data")
         start_year_month = year_month_list[0]
         end_year_month = year_month_list[-1]
 
-        start_year_month_dir = os.path.join(l1a_l1b_dir, start_year_month)
+        start_year_month_dir = os.path.join(l1a_l1b_dir(), start_year_month)
         start_days = sorted(os.listdir(start_year_month_dir))
         if not all(day_format.search(day) for day in start_days):
-            raise Exception("there are files which are not named as days in {start_year_month}")
+            raise Exception(f"there are files which are not named as days in {start_year_month}")
         start_day = start_days[0]
 
-        end_year_month_dir = os.path.join(l1a_l1b_dir, end_year_month)
+        end_year_month_dir = os.path.join(l1a_l1b_dir(), end_year_month)
         end_days = sorted(os.listdir(end_year_month_dir))
         if not all(day_format.search(day) for day in end_days):
             raise Exception(f"there are files which are not named as days in {end_year_month}")
@@ -668,17 +731,15 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
         logger.info("runnning L1B_CX")
         run_processor(
             conf[Conf.L1B_CX_EXE],
-            f"-P {data_release_dir} --Log {LOG_LEVELS_IEEC[log_level]}"
+            # f"-P {data_release_dir()} --Log {LOG_LEVELS_IEEC[log_level]}"
+            f"--StartDateTime {start_date}T00:00 --StopDateTime {end_date}T23:59"
         )
         logger.info("runnning L1B_CC")
-        try:
-            run_processor(
-                conf[Conf.L1B_CC_EXE],
-                f"-P {data_release_dir}" # Is this done by IEEC too?
-            )
-        except Exception:
-            logger.info("this processor failed but we allow the orchestrator to "
-                "continue the execution as Gabrielle asked.")
+        run_processor(
+            conf[Conf.L1B_CC_EXE],
+            # f"-P {data_release_dir()}" # Is this done by IEEC too?
+            f"--StartDateTime {start_date}T00:00 --StopDateTime {end_date}T23:59"
+        )
         logger.info("running L1B_MM again")
         run_processor(
             conf[Conf.L1B_MM_EXE],
@@ -696,45 +757,36 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
             # can be selected from the options.
             run_processor(
                 conf[Conf.L2FT_EXE],
-                f"{start_date} {end_date}"
+                f"{start_date} {end_date} ..\\conf\\H1conf_track.txt"
             )
-            check_existence_of_netcdf_file(os.path.join(data_release_dir, "L2OP-FT"))
-            do_backup_and_pam()
-            return
         case Proc.L2FB:
             logger.info("running L2FB")
-            # NOTE: this needs instead of the data_dir needs the path to the
-            # directory containing the configuration file
             run_processor(
                 conf[Conf.L2FB_EXE],
-                f"{start_date} {end_date} {data_dir} {LOG_LEVELS_IFAC[log_level]}"
+                f"{start_date} {end_date} ..\\conf {LOG_LEVELS_IFAC[log_level]}"
             )
-            check_existence_of_netcdf_file(os.path.join(data_release_dir, "L2OP-FB"))
-            do_backup_and_pam()
-            return
         case Proc.L2SM:
             logger.info("running L2SM")
             l2sm_working_dir = os.path.dirname(os.path.dirname(conf[Conf.L2SM_EXE]))
             run_processor(
                 conf[Conf.L2SM_EXE],
-                f"-input {l2sm_working_dir} {start_date}T00:00 {end_date}T12:59"
+                # f"-input {l2sm_working_dir} {start_date}T00:00 {end_date}T12:59"
+                f"{start_date}T00:00 {end_date}T23:59 ..\\conf\\configuration.cfg"
             )
-            check_existence_of_netcdf_file(os.path.join(data_release_dir, "L2OP-SSM"))
-            do_backup_and_pam()
-            return
         case Proc.L2SI:
             logger.info("running L2SI")
             l2si_dir = os.path.join(auxiliary_data_dir, "L2OP-SI")
-            # TODO: remove command line arguments since they are not needed anymore.
             run_processor(
                 conf[Conf.L2SI_EXE],
-                f"-P {data_release_dir} -M {l2si_dir} --Log {LOG_LEVELS_IEEC[log_level]}"
+                f"--StartDateTime {start_date}T00:00 --StopDateTime {end_date}T23:59"
+                # ""
+                # f"-P {data_release_dir} -M {l2si_dir} --Log {LOG_LEVELS_IEEC[log_level]}"
             )
-            check_existence_of_netcdf_file(os.path.join(data_release_dir, "L2OP-SI"))
-            do_backup_and_pam()
-            return
         case other:
             assert False
+
+    check_existence_of_netcdf_file(os.path.join(data_release_dir(), PROC_OUTPUT_DIRS[end]))
+    do_backup_and_pam()
 
 # TODO: add the name for the file object for better error messages.
 def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.TextIO, log_dir: str) -> None:
@@ -829,7 +881,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
                 "end": Proc[end_var.get()],
                 "pam": pam_var.get(),
                 "backup": backup_var.get(),
-                "log_level": log_level_combobox.current()
+                "log_level": LogLevel(log_level_combobox.current())
             }
             assert validate_arguments(res)
             logger.info("saving state file")
@@ -912,7 +964,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         dialog = exe_dialog if kind == ConfKind.EXE \
             else dir_dialog if kind == ConfKind.DIR \
             else None
-        assert dialog, f"The ConfKind enumeration shall contain only EXE and" \
+        assert dialog is not None, f"The ConfKind enumeration shall contain only EXE and" \
             f" DIR, it has instead {ConfKind.__members__}"
         def closure(var=var, dialog=dialog, entry=entry, option=option):
             res = dialog(option)
@@ -1122,7 +1174,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
             "end": Proc[end_var.get()],
             "pam": pam_var.get(),
             "backup": backup_var.get(),
-            "log_level": log_level_combobox.current()
+            "log_level": LogLevel(log_level_combobox.current()),
         }
         try:
             run(
