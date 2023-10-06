@@ -40,6 +40,7 @@ Things that I would do better next time:
 
 # TODO: add a VERSION global so that it can be displayed in the window.
 
+import argparse
 import enum
 import glob
 import inspect
@@ -377,7 +378,7 @@ def validate_arguments(args: Args) -> bool:
 assert validate_arguments(ARGS_DEFAULT)
 
 # NOTE: more than 'conf' the name should be 'conf_paths'
-def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
+def run(logger: logging.Logger, args: Args, conf: list[str], l1a_input_file: str) -> None:
     """If anything goes wrong this function throws an exception with an
     explenation of what went wrong."""
 
@@ -611,7 +612,9 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
         logger.info("runnning L1A")
         run_processor(
             conf[Conf.L1A_EXE],
-            ""
+            # No validation is performed on this argument because L1A should do
+            # it any way.
+            l1a_input_file
         )
 
         l1a_work_dir, _, _ = conf[Conf.L1A_EXE].rpartition('\\')
@@ -789,8 +792,9 @@ def run(logger: logging.Logger, args: Args, conf: list[str]) -> None:
     do_backup_and_pam()
 
 # TODO: add the name for the file object for better error messages.
-def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.TextIO, log_dir: str) -> None:
+def gui(logger: logging.Logger, state_file: typing.TextIO, conf: list[str], log_dir: str) -> None:
     """This function creates a user friendly GUI to operate the orchestrator."""
+    assert len(conf) == len(Conf)
 
     start: Proc
     end: Proc
@@ -839,27 +843,6 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
         pam = ARGS_DEFAULT["pam"]
         backup = ARGS_DEFAULT["backup"]
         log_level = ARGS_DEFAULT["log_level"]
-
-    try:
-        conf_json = json.load(config_file)
-
-        for option in Conf:
-            key = option.name
-            actual_type = type(conf_json[key])
-            if actual_type != str:
-                raise TypeError(f"the key {key} has type {actual_type} instead "
-                    f"of {str}")
-
-        if len(conf_json.keys()) != len(Conf):
-            logger.warning("the configuration file has extraneous keys")
-
-        # Again we delay the path validation.
-
-        conf = [conf_json[key.name] for key in Conf] # We read only the keys that we need.
-    except (json.JSONDecodeError, KeyError, TypeError):
-        logger.exception("an error occured while reading the configuration file"
-            "using the default one instead")
-        conf = CONF_VALUES_DEFAULT
 
     # Be carefull in the way you create istances of tkinter.Variable. You have
     # to keep a reference to each one of them somewere, either in a function or
@@ -1180,7 +1163,8 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
             run(
                 logger=run_logger,
                 args=args,
-                conf=conf
+                conf=conf,
+                l1a_input_file=""
             )
         except Exception as ex:
             run_logger.exception("the orchestration encoutered a problem")
@@ -1253,15 +1237,88 @@ def _main() -> int:
     root_logger.addHandler(console_handler)
     logger = logging.getLogger(__name__)
 
-    # NOTE: should I add support for CLI? also a --version flag?
+    try:
+        conf_json = json.load(config_file)
+
+        for option in Conf:
+            key = option.name
+            actual_type = type(conf_json[key])
+            if actual_type != str:
+                raise TypeError(f"the key {key} has type {actual_type} instead "
+                    f"of {str}")
+
+        if len(conf_json.keys()) != len(Conf):
+            logger.warning("the configuration file has extraneous keys")
+
+        # Again we delay the path validation.
+
+        conf = [conf_json[key.name] for key in Conf] # We read only the keys that we need.
+    except (json.JSONDecodeError, KeyError, TypeError):
+        logger.exception("an error occured while reading the configuration file"
+            "using the default one instead")
+        conf = CONF_VALUES_DEFAULT
+
+    # NOTE: should I add support for a --version flag?
     # TODO: find a way to install the files the first time we run the
     #       orchestrator that does not involve a bunch of errors like now.
 
-    try:
-        gui(logger, state_file, config_file, log_dir)
-    except Exception as ex:
-        raise Exception("unable to create the GUI") from ex
+    parser = argparse.ArgumentParser(prog='HydroGNSS Orchestrator',
+        description='This is the program that coordinates the various level 1 '
+        'and level 2 processors.')
+    parser.add_argument('-start', action='store', type=lambda x: Proc[x], required=True)
+    parser.add_argument('-end', action='store', type=lambda x: Proc[x], required=True)
+    parser.add_argument('-pam', action='store_true')
+    parser.add_argument('-backup', action='store', default="", type=str)
+    parser.add_argument('-log_level', action='store', type=lambda x: LogLevel[x], default=LogLevel.INFO)
+    parser.add_argument('-hsavers', action='store', default="", type=str)
 
+    if len(sys.argv) == 1:
+        try:
+            gui(logger, state_file, conf, log_dir)
+        except Exception as ex:
+            raise Exception("unable to create the GUI") from ex
+    else:
+        parsed_args = parser.parse_args()
+        args: Args = {
+            "start": parsed_args.start,
+            "end": parsed_args.end,
+            "pam": parsed_args.pam,
+            "backup": parsed_args.backup,
+            "log_level": parsed_args.log_level,
+        }
+        if not validate_arguments(args):
+            logger.error("the argument combination is invalid")
+            return 1
+        # TODO: this stuff should not be copypasted from the orchestrate_simulation function
+        start_time = time.gmtime()
+        start_time_str = time.strftime("%Y%m%d_%H%M%S", start_time)
+        pseudo_module_id = f"{_enum_members_as_strings(Proc)[parsed_args.start]}{_enum_members_as_strings(Proc)[parsed_args.end]}"
+        logfile_name = f"{pseudo_module_id}_{start_time_str}.log"
+        logfile_path = os.path.join(log_dir, logfile_name)
+        try:
+            file_handler = logging.FileHandler(logfile_path) if os.name == "nt" \
+                else logging.NullHandler()
+        except Exception as ex:
+            logger.exception("unable to create log file for this run")
+        run_logger = logging.getLogger(f"{__name__}.run")
+        # The log level is setted internally in the run routune.
+        # run_logger.setLevel(logging.INFO)
+        # If we run multiple simulations from the same window we keep appending
+        # file handlers to the same {__name__}.run logger object, therefore we
+        # append the log of the new simulation to the old files, which is bad.
+        # This happens because we call logging.getLogger() with the same name
+        # multiple times and it gives us back always the same logger object.
+        while run_logger.handlers:
+            run_logger.removeHandler(run_logger.handlers[0])
+        file_handler.setFormatter(
+            logging.Formatter("%(asctime)s %(levelname)s: %(funcName)s: %(message)s")
+        )
+        run_logger.addHandler(file_handler)
+        try:
+            run(run_logger, args, conf, parsed_args.hsavers)
+        except Exception as ex:
+            run_logger.exception("the orchestration encoutered a problem")
+            logger.error("the orchestration terminated baddly")
     return 0
 
 if __name__ == '__main__':
