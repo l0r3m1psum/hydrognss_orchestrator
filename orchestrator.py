@@ -766,7 +766,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str], l1a_input_file: str
             logger.info("running L2FB")
             run_processor(
                 conf[Conf.L2FB_EXE],
-                f"{start_date} {end_date} ..\\conf {LOG_LEVELS_IFAC[log_level]}"
+                f"{start_date} {end_date} ..\\conf"
             )
         case Proc.L2SM:
             logger.info("running L2SM")
