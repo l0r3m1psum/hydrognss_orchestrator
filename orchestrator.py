@@ -792,7 +792,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str], l1a_input_file: str
     do_backup_and_pam()
 
 # TODO: add the name for the file object for better error messages.
-def gui(logger: logging.Logger, state_file: typing.TextIO, conf: list[str], log_dir: str) -> None:
+def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.TextIO, conf: list[str], log_dir: str) -> None:
     """This function creates a user friendly GUI to operate the orchestrator."""
     assert len(conf) == len(Conf)
 
@@ -1274,7 +1274,7 @@ def _main() -> int:
 
     if len(sys.argv) == 1:
         try:
-            gui(logger, state_file, conf, log_dir)
+            gui(logger, state_file, config_file, conf, log_dir)
         except Exception as ex:
             raise Exception("unable to create the GUI") from ex
     else:
