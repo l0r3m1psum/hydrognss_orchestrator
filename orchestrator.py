@@ -38,7 +38,7 @@ Things that I would do better next time:
   * create an enum for HydroGNSS-1 or HydroGNSS-2??
 """
 
-# TODO: add a VERSION global so that it can be displayed in the window.
+VERSION = "6.1"
 
 import argparse
 import enum
@@ -854,7 +854,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
 
     root = tkinter.Tk()
     root.resizable(False, False)
-    root.title("Orchestrator")
+    root.title("Orchestrator " + VERSION)
     def save_state_and_close() -> None:
         try:
             state_file.truncate(0)
@@ -1271,6 +1271,7 @@ def _main() -> int:
     parser.add_argument('-backup', action='store', default="", type=str)
     parser.add_argument('-log_level', action='store', type=lambda x: LogLevel[x], default=LogLevel.INFO)
     parser.add_argument('-hsavers', action='store', default="", type=str)
+    parser.add_argument('--version', action='version', version=VERSION)
 
     if len(sys.argv) == 1:
         try:
