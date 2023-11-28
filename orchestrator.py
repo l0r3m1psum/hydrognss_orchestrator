@@ -38,7 +38,7 @@ Things that I would do better next time:
   * create an enum for HydroGNSS-1 or HydroGNSS-2??
 """
 
-VERSION = "6.1"
+VERSION = "6.2"
 
 import argparse
 import enum
@@ -457,7 +457,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str], l1a_input_file: str
                 ) as p:
                 assert p.stdout is not None # Just for mypy.
                 for line in p.stdout:
-                    # Since in io.TextIOBase lines are split on '\n' it there are
+                    # Since in io.TextIOBase lines are split on '\n' if there are
                     # any \r in the sequence we just ignore it.
                     logger.info(line.rstrip())
                     # TODO: Sometimes the output seems to stop in the console
@@ -535,23 +535,31 @@ def run(logger: logging.Logger, args: Args, conf: list[str], l1a_input_file: str
                 )
                 compare_tool_out_path = os.path.join(f"{conf[Conf.BACKUP_DIR]}",
                         "compareL1B_output")
+                # As far as we understand there can either be SSTLplots_1_RR and
+                # SSTLplots_1_LR or the previous two with SSTLplots_5_RR and
+                # SSTLplots_5_LR. We are not so sure about this so the code
+                # looks like this (we do not really now what to consider an
+                # error condition or not.)
                 with zipfile.ZipFile(f"{backup_path_noext}.zip", 'a') as zipf:
-                    RR_plots_dir = os.path.join(compare_tool_out_path,
-                        f"{backup_name}_SSTLplots_1_RR")
-                    LR_plots_dir = os.path.join(compare_tool_out_path,
-                        f"{backup_name}_SSTLplots_1_LR")
-                    try:
-                        for file in os.listdir(RR_plots_dir):
-                            file_path = os.path.join(RR_plots_dir, file)
-                            zipf.write(file_path, f"{which_hydrognss}\\DataRelease\\SSTLplots_1_RR\\{file}")
-                    except FileNotFoundError:
-                        logger.exception("an error occurred while putting RR in the backup")
-                    try:
-                        for file in os.listdir(LR_plots_dir):
-                            file_path = os.path.join(LR_plots_dir, file)
-                            zipf.write(file_path, f"{which_hydrognss}\\DataRelease\\SSTLplots_1_LR\\{file}")
-                    except FileNotFoundError:
-                        logger.exception("an error occurred while putting LR in the backup")
+                    for i in ['1', '5']:
+                        RR_plots_dir = os.path.join(compare_tool_out_path,
+                            f"{backup_name}_SSTLplots_{i}_RR")
+                        LR_plots_dir = os.path.join(compare_tool_out_path,
+                            f"{backup_name}_SSTLplots_{i}_LR")
+                        try:
+                            for file in os.listdir(RR_plots_dir):
+                                file_path = os.path.join(RR_plots_dir, file)
+                                zipf.write(file_path, f"{which_hydrognss}\\DataRelease\\SSTLplots_{i}_RR\\{file}")
+                        except FileNotFoundError:
+                            if i == '1':
+                                logger.exception("an error occurred while putting RR in the backup")
+                        try:
+                            for file in os.listdir(LR_plots_dir):
+                                file_path = os.path.join(LR_plots_dir, file)
+                                zipf.write(file_path, f"{which_hydrognss}\\DataRelease\\SSTLplots_{i}_LR\\{file}")
+                        except FileNotFoundError:
+                            if i == '1':
+                                logger.exception("an error occurred while putting LR in the backup")
                 _recycle(compare_tool_out_path)
 
         logger.info("orchestration finished")
