@@ -760,7 +760,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str], l1a_input_file: str
             do_backup_and_pam()
             return
 
-	uuid = "random_uuid_to_make_it_happy"
+    uuid = "random_uuid_to_make_it_happy"
     match end:
         case Proc.L2FT:
             logger.info("running L2FT")
