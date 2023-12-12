@@ -38,7 +38,7 @@ Things that I would do better next time:
   * create an enum for HydroGNSS-1 or HydroGNSS-2??
 """
 
-VERSION = "6.2"
+VERSION = "6.4"
 
 import argparse
 import enum
@@ -290,7 +290,6 @@ _experiment_name_format = re.compile(
     "_[0-9]{2}-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-[0-9]{4}_[0-9]{2}_[0-9]{2}_[0-9]{2}$"
 )
 
-
 # Windows ######################################################################
 
 if os.name == 'nt':
@@ -352,6 +351,8 @@ if os.name == 'nt':
 
 # Implementation ###############################################################
 
+logger = logging.getLogger(__name__)
+
 def validate_arguments(args: Args) -> bool:
     start = args["start"]
     end = args["end"]
@@ -377,8 +378,44 @@ def validate_arguments(args: Args) -> bool:
 
 assert validate_arguments(ARGS_DEFAULT)
 
+class LogToFileContext:
+    """Inspired by:
+    https://docs.python.org/3/howto/logging-cookbook.html#using-a-context-manager-for-selective-logging
+    """
+    def __init__(self, start_proc: str, end_proc: str, log_dir: str):
+        start_time = time.gmtime()
+        start_time_str = time.strftime("%Y%m%d_%H%M%S", start_time)
+        pseudo_module_id = f"{start_proc}{end_proc}"
+        logfile_name = f"{pseudo_module_id}_{start_time_str}.log"
+        logfile_path = os.path.join(log_dir, logfile_name)
+        try:
+            file_handler = logging.FileHandler(logfile_path) if os.name == "nt" \
+                else logging.NullHandler()
+        except Exception as ex:
+            logger.exception("unable to create log file for this run")
+            file_handler = logging.NullHandler()
+        file_handler.setFormatter(
+            logging.Formatter("%(asctime)s %(levelname)s: %(funcName)s: %(message)s")
+        )
+        self.handler = file_handler
+        # Because run() can change the log level.
+        self.original_level = logger.getEffectiveLevel()
+
+    def __enter__(self):
+        logger.addHandler(self.handler)
+
+    def __exit__(self, et, ev, tb):
+        # TODO: test that this prints what I expect
+        logger.setLevel(self.original_level)
+        if et is not None:
+            logger.exception("the orchestration encoutered a problem")
+        logger.removeHandler(self.handler)
+        if et is not None:
+            logger.error("the orchestration terminated baddly")
+        return True # To swallow the exception.
+
 # NOTE: more than 'conf' the name should be 'conf_paths'
-def run(logger: logging.Logger, args: Args, conf: list[str], l1a_input_file: str) -> None:
+def run(args: Args, conf: list[str], l1a_input_file: str) -> None:
     """If anything goes wrong this function throws an exception with an
     explenation of what went wrong."""
 
@@ -801,7 +838,7 @@ def run(logger: logging.Logger, args: Args, conf: list[str], l1a_input_file: str
     do_backup_and_pam()
 
 # TODO: add the name for the file object for better error messages.
-def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.TextIO, conf: list[str], log_dir: str) -> None:
+def gui(state_file: typing.TextIO, config_file: typing.TextIO, conf: list[str], log_dir: str) -> None:
     """This function creates a user friendly GUI to operate the orchestrator."""
     assert len(conf) == len(Conf)
 
@@ -1136,31 +1173,6 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
 
         conf = [conf_vars[option].get() for option in Conf]
 
-        start_time = time.gmtime()
-        start_time_str = time.strftime("%Y%m%d_%H%M%S", start_time)
-        pseudo_module_id = f"{start_var.get()}{end_var.get()}"
-        logfile_name = f"{pseudo_module_id}_{start_time_str}.log"
-        logfile_path = os.path.join(log_dir, logfile_name)
-        try:
-            file_handler = logging.FileHandler(logfile_path) if os.name == "nt" \
-                else logging.NullHandler()
-        except Exception as ex:
-            logger.exception("unable to create log file for this run")
-        run_logger = logging.getLogger(f"{__name__}.run")
-        # The log level is setted internally in the run routune.
-        # run_logger.setLevel(logging.INFO)
-        # If we run multiple simulations from the same window we keep appending
-        # file handlers to the same {__name__}.run logger object, therefore we
-        # append the log of the new simulation to the old files, which is bad.
-        # This happens because we call logging.getLogger() with the same name
-        # multiple times and it gives us back always the same logger object.
-        while run_logger.handlers:
-            run_logger.removeHandler(run_logger.handlers[0])
-        file_handler.setFormatter(
-            logging.Formatter("%(asctime)s %(levelname)s: %(funcName)s: %(message)s")
-        )
-        run_logger.addHandler(file_handler)
-
         args: Args = {
             "start": Proc[start_var.get()],
             "end": Proc[end_var.get()],
@@ -1168,19 +1180,15 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
             "backup": backup_var.get(),
             "log_level": LogLevel(log_level_combobox.current()),
         }
-        try:
+
+        with LogToFileContext(start_var.get(), end_var.get(), log_dir):
             run(
-                logger=run_logger,
                 args=args,
                 conf=conf,
                 l1a_input_file=""
             )
-        except Exception as ex:
-            run_logger.exception("the orchestration encoutered a problem")
-            logger.error("the orchestration terminated baddly")
 
-        # Closing the window to see if this solves the misterious bug that is
-        # related to deleting the DataRelease direcotry.
+        # We close the window because it was the required behaviour.
         save_state_and_close()
 
     run_button = tkinter.ttk.Button(
@@ -1202,6 +1210,7 @@ def gui(logger: logging.Logger, state_file: typing.TextIO, config_file: typing.T
 
 def _main() -> int:
     if os.name != "nt":
+        # This should be warnings.warn
         print("os not supported, some things are not going to work but the GUI "
             "will show up", file=sys.stderr)
 
@@ -1229,7 +1238,7 @@ def _main() -> int:
             # we can't create/open files we may have a bigger problem, therefore
             # we just stop the execution here.
             raise Exception("unable to create a necessary file or directory for"
-                "the orchestrator") from ex
+                " the orchestrator") from ex
 
     log_dir = "..\\log"
     if not os.path.exists(log_dir) and os.name == "nt":
@@ -1238,13 +1247,11 @@ def _main() -> int:
             file=sys.stderr)
         return 1
 
+    logger.setLevel(logging.INFO)
     formatter = logging.Formatter("%(levelname)s:%(funcName)s %(message)s")
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(formatter)
-    root_logger = logging.getLogger()
-    root_logger.setLevel(logging.INFO)
-    root_logger.addHandler(console_handler)
-    logger = logging.getLogger(__name__)
+    logger.addHandler(console_handler)
 
     try:
         conf_json = json.load(config_file)
@@ -1267,7 +1274,6 @@ def _main() -> int:
             "using the default one instead")
         conf = CONF_VALUES_DEFAULT
 
-    # NOTE: should I add support for a --version flag?
     # TODO: find a way to install the files the first time we run the
     #       orchestrator that does not involve a bunch of errors like now.
 
@@ -1284,7 +1290,7 @@ def _main() -> int:
 
     if len(sys.argv) == 1:
         try:
-            gui(logger, state_file, config_file, conf, log_dir)
+            gui(state_file, config_file, conf, log_dir)
         except Exception as ex:
             raise Exception("unable to create the GUI") from ex
     else:
@@ -1299,36 +1305,10 @@ def _main() -> int:
         if not validate_arguments(args):
             logger.error("the argument combination is invalid")
             return 1
-        # TODO: this stuff should not be copypasted from the orchestrate_simulation function
-        start_time = time.gmtime()
-        start_time_str = time.strftime("%Y%m%d_%H%M%S", start_time)
-        pseudo_module_id = f"{_enum_members_as_strings(Proc)[parsed_args.start]}{_enum_members_as_strings(Proc)[parsed_args.end]}"
-        logfile_name = f"{pseudo_module_id}_{start_time_str}.log"
-        logfile_path = os.path.join(log_dir, logfile_name)
-        try:
-            file_handler = logging.FileHandler(logfile_path) if os.name == "nt" \
-                else logging.NullHandler()
-        except Exception as ex:
-            logger.exception("unable to create log file for this run")
-        run_logger = logging.getLogger(f"{__name__}.run")
-        # The log level is setted internally in the run routune.
-        # run_logger.setLevel(logging.INFO)
-        # If we run multiple simulations from the same window we keep appending
-        # file handlers to the same {__name__}.run logger object, therefore we
-        # append the log of the new simulation to the old files, which is bad.
-        # This happens because we call logging.getLogger() with the same name
-        # multiple times and it gives us back always the same logger object.
-        while run_logger.handlers:
-            run_logger.removeHandler(run_logger.handlers[0])
-        file_handler.setFormatter(
-            logging.Formatter("%(asctime)s %(levelname)s: %(funcName)s: %(message)s")
-        )
-        run_logger.addHandler(file_handler)
-        try:
-            run(run_logger, args, conf, parsed_args.hsavers)
-        except Exception as ex:
-            run_logger.exception("the orchestration encoutered a problem")
-            logger.error("the orchestration terminated baddly")
+
+        with LogToFileContext(_enum_members_as_strings(Proc)[parsed_args.start],
+            _enum_members_as_strings(Proc)[parsed_args.end], log_dir):
+            run(args, conf, parsed_args.hsavers)
     return 0
 
 if __name__ == '__main__':
