@@ -100,8 +100,6 @@ PROC_OUTPUT_DIRS = [
 assert len(Proc) == len(PROC_OUTPUT_DIRS)
 
 # Configuration of the variuous processors #####################################
-# Here we define a big table (the lists here defined are its rows) with all the
-# usefull information about the paths that are needed by the various processors.
 
 class Conf(enum.IntEnum):
     """All the paths that can be configured. The name in the enumaration is also
@@ -121,74 +119,8 @@ class Conf(enum.IntEnum):
 
 class ConfKind(enum.Enum):
     """Which kind of path to expect in the configuration option."""
-    EXE = enum.auto()
+    EXE = 0
     DIR = enum.auto()
-
-# Names of the configuration options to be displayed in the GUI.
-CONF_NAMES = [
-    "Backup Directory",
-    "Data Directory",
-    "L1A Executable",
-    "L1B Executable",
-    "L1BMM Executable",
-    "L1BCX Executable",
-    "L1BCC Executable",
-    "L2FB Executable",
-    "L2FT Executable",
-    "L2SI Executable",
-    "L2SM Executable",
-    "PAM Executable",
-]
-assert len(CONF_NAMES) == len(Conf)
-
-# What kind of path the configuration options want.
-CONF_KINDS = [
-    ConfKind.DIR,
-    ConfKind.DIR,
-    ConfKind.EXE,
-    ConfKind.EXE,
-    ConfKind.EXE,
-    ConfKind.EXE,
-    ConfKind.EXE,
-    ConfKind.EXE,
-    ConfKind.EXE,
-    ConfKind.EXE,
-    ConfKind.EXE,
-    ConfKind.EXE,
-]
-assert len(CONF_KINDS) == len(Conf)
-
-CONF_VALUES_DEFAULT = [
-    "C:\\E2ES_backups",
-    "C:\\PDGS_NAS_folder",
-    "C:\\L1A\\bin\\HSAVERS.exe",
-    "C:\\L1BOP\\scripts\\Run_L1b_Processor_with_dates.py",
-    "C:\\L1OP-MM\\scripts\\Run_L1Merge_with_dates.py",
-    "C:\\L2OP-SI\\bin\\L1B_CX_DR.exe",
-    "C:\\L2OP-SI\\bin\\L1B_CC_DR.exe",
-    "C:\\L2OP-FB\\bin\\L2OP_FB.exe",
-    "C:\\L2OP-FT\\bin\\L2PPFT_mainscript.exe",
-    "C:\\L2OP-SI\\bin\\L2OP_SI_DR.exe",
-    "C:\\L2OP-SSM\\bin\\SML2OP_start.exe",
-    "C:\\PAM\\bin\\PAM_start.exe",
-]
-assert len(CONF_VALUES_DEFAULT) == len(Conf)
-
-CONF_DIALOG_TITLES = [
-    "Choose the backup directory",
-    "Choose the main input output directory",
-    "Choose the L1A executable",
-    "Choose the L1B executable",
-    "Choose the L1B merge module executable",
-    "Choose the L1B CX executable",
-    "Choose the L1B CC executable",
-    "Choose the L2FB executable",
-    "Choose the L2FT executable",
-    "Choose the L2SI executable",
-    "Choose the L2SM executable",
-    "Choose the PAM executable",
-]
-assert len(CONF_DIALOG_TITLES) == len(Conf)
 
 class ConfGroup(enum.IntEnum):
     IO_DIR  = 0
@@ -212,23 +144,30 @@ CONF_GROUP_NAME = [
 ]
 assert len(ConfGroup) == len(CONF_GROUP_NAME)
 
-CONF_GROUP = [
-    ConfGroup.IO_DIR,
-    ConfGroup.IO_DIR,
-    ConfGroup.L1A,
-    ConfGroup.L1B,
-    ConfGroup.L1B,
-    ConfGroup.L1B,
-    ConfGroup.L1B,
-    ConfGroup.L2FB,
-    ConfGroup.L2FT,
-    ConfGroup.L2SI,
-    ConfGroup.L2SM,
-    ConfGroup.PAM,
-]
-assert len(Conf) == len(CONF_GROUP)
+# name,               kind,         default_value,                                         dialog_title,                             group
+CONF_TABLE = (
+    ("Backup Directory", ConfKind.DIR, "C:\\E2ES_backups",                                    "Choose the backup directory",            ConfGroup.IO_DIR),
+    ("Data Directory",   ConfKind.DIR, "C:\\PDGS_NAS_folder",                                 "Choose the main input output directory", ConfGroup.IO_DIR),
+    ("L1A Executable",   ConfKind.EXE, "C:\\L1A\\bin\\HSAVERS.exe",                           "Choose the L1A executable",              ConfGroup.L1A),
+    ("L1B Executable",   ConfKind.EXE, "C:\\L1BOP\\scripts\\Run_L1b_Processor_with_dates.py", "Choose the L1B executable",              ConfGroup.L1B),
+    ("L1BMM Executable", ConfKind.EXE, "C:\\L1OP-MM\\scripts\\Run_L1Merge_with_dates.py",     "Choose the L1B merge module executable", ConfGroup.L1B),
+    ("L1BCX Executable", ConfKind.EXE, "C:\\L2OP-SI\\bin\\L1B_CX_DR.exe",                     "Choose the L1B CX executable",           ConfGroup.L1B),
+    ("L1BCC Executable", ConfKind.EXE, "C:\\L2OP-SI\\bin\\L1B_CC_DR.exe",                     "Choose the L1B CC executable",           ConfGroup.L1B),
+    ("L2FB Executable",  ConfKind.EXE, "C:\\L2OP-FB\\bin\\L2OP_FB.exe",                       "Choose the L2FB executable",             ConfGroup.L2FB),
+    ("L2FT Executable",  ConfKind.EXE, "C:\\L2OP-FT\\bin\\L2PPFT_mainscript.exe",             "Choose the L2FT executable",             ConfGroup.L2FT),
+    ("L2SI Executable",  ConfKind.EXE, "C:\\L2OP-SI\\bin\\L2OP_SI_DR.exe",                    "Choose the L2SI executable",             ConfGroup.L2SI),
+    ("L2SM Executable",  ConfKind.EXE, "C:\\L2OP-SSM\\bin\\SML2OP_start.exe",                 "Choose the L2SM executable",             ConfGroup.L2SM),
+    ("PAM Executable",   ConfKind.EXE, "C:\\PAM\\bin\\PAM_start.exe",                         "Choose the PAM executable",              ConfGroup.PAM),
+)
+assert len(CONF_TABLE) == len(Conf)
+column_major = tuple(zip(*CONF_TABLE))
+CONF_NAMES          = column_major[0] # Names of the configuration options to be displayed in the GUI.
+CONF_KINDS          = column_major[1] # What kind of path the configuration options want.
+CONF_VALUES_DEFAULT = column_major[2]
+CONF_DIALOG_TITLES  = column_major[3]
+CONF_GROUP          = column_major[4]
+del column_major
 
-# NOTE: can I delete this?
 # The directories that should always be in DataRelease.
 DATA_RELEASE_SUBDIRS = [
     "L1A_L1B",
@@ -1272,7 +1211,7 @@ def _main() -> int:
     except (json.JSONDecodeError, KeyError, TypeError):
         logger.exception("an error occured while reading the configuration file"
             "using the default one instead")
-        conf = CONF_VALUES_DEFAULT
+        conf = list(CONF_VALUES_DEFAULT)
 
     # TODO: find a way to install the files the first time we run the
     #       orchestrator that does not involve a bunch of errors like now.
