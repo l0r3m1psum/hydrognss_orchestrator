@@ -736,7 +736,6 @@ def run(args: Args, conf: list[str], l1a_input_file: str) -> None:
             do_backup_and_pam()
             return
 
-    uuid = "random_uuid_to_make_it_happy"
     match end:
         case Proc.L2FT:
             logger.info("running L2FT")
@@ -751,7 +750,7 @@ def run(args: Args, conf: list[str], l1a_input_file: str) -> None:
             logger.info("running L2FB")
             run_processor(
                 conf[Conf.L2FB_EXE],
-                f"{start_date} {end_date} ..\\conf {uuid}"
+                f"{start_date} {end_date} ..\\conf"
             )
         case Proc.L2SM:
             logger.info("running L2SM")
