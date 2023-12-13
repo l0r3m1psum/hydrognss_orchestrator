@@ -344,7 +344,6 @@ class LogToFileContext:
         logger.addHandler(self.handler)
 
     def __exit__(self, et, ev, tb):
-        # TODO: test that this prints what I expect
         logger.setLevel(self.original_level)
         if et is not None:
             logger.exception("the orchestration encoutered a problem")
@@ -352,6 +351,151 @@ class LogToFileContext:
         if et is not None:
             logger.error("the orchestration terminated baddly")
         return True # To swallow the exception.
+
+def run_processor(file_path: str, arguments: str) -> None:
+    exe = file_path if file_path.endswith(".exe") \
+        else f"py {file_path}" if file_path.endswith(".py") \
+        else None
+
+    if exe is None:
+        raise ValueError(f"only python and exe files are supported, "
+            f"{file_path} is not supported")
+
+    working_dir, _, _ = file_path.rpartition('\\')
+
+    # We expect %COMSPEC% to be cmd.exe or something like that.
+    try:
+        cmd_with_args = f"{exe} {arguments}"
+        logger.info(f"launching '{cmd_with_args}'")
+        # NOTE: should I worry about 'universal_newlines'?
+        with subprocess.Popen(
+            args=cmd_with_args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            cwd=working_dir,
+            text=True
+            ) as p:
+            assert p.stdout is not None # Just for mypy.
+            for line in p.stdout:
+                # Since in io.TextIOBase lines are split on '\n' if there are
+                # any \r in the sequence we just ignore it.
+                logger.info(line.rstrip())
+                # TODO: Sometimes the output seems to stop in the console
+                # until you press enter it is the so called "mark mode" and
+                # it can be programmatically detected and disabled.
+                # https://stackoverflow.com/questions/13599822/command-prompt-gets-stuck-and-continues-on-enter-key-press
+                # https://stackoverflow.com/questions/41409727/turn-off-windows-10-console-mark-mode-from-my-application
+
+            if p.wait() != 0:
+                raise ChildProcessError(f"{file_path} exited with error code {p.returncode}")
+    except Exception as ex:
+        raise Exception(f"something went wrong during the execution of "
+            f"{file_path}") from ex
+
+def check_existence_of_netcdf_file(start_dir: str):
+    walker = os.walk(
+        start_dir,
+        onerror=lambda ex: logger.exception("an error occured while traversing"
+            f"'{ex.filename}' we ignore it and keep going"))
+    for dirpath, dirnames, filenames in walker:
+        if any(filename.endswith(".nc") for filename in filenames):
+            return
+
+    raise ChildProcessError(f"no NetCDF file generated in '{start_dir}'")
+
+# NOTE: make which_hydrognss an enum?
+def do_backup_and_pam(start: Proc, end: Proc, conf: list[str],
+    experiment_name: str, which_hydrognss: str, pam: bool) -> None:
+
+    assert start <= end
+    assert _experiment_name_format.search(experiment_name)
+    assert which_hydrognss == "HydroGNSS-1" or which_hydrognss == "HydroGNSS-2"
+
+    timestamp = f"{int(time.time())}"
+    assert len(timestamp) == 10
+    assert experiment_name
+    assert which_hydrognss
+    backup_name = f"{experiment_name}_{timestamp}"
+    backup_path_noext = os.path.join(conf[Conf.BACKUP_DIR], backup_name)
+    logger.info("doing the backup")
+    data_dir = conf[Conf.DATA_DIR]
+    try:
+        shutil.make_archive(backup_path_noext, "zip", data_dir, which_hydrognss)
+    except Exception as ex:
+        raise Exception("unable to make backup archive") from ex
+    if pam:
+        logger.info("running the PAM")
+        auxiliary_data_dir = os.path.join(data_dir, "Auxiliary_Data")
+        run_processor(
+            conf[Conf.PAM_EXE],
+            f"{PROC_NAMES_PAM[end]} {auxiliary_data_dir} "
+            f"{conf[Conf.BACKUP_DIR]} {backup_name}"
+        )
+
+        pam_output = os.path.join(conf[Conf.BACKUP_DIR], "PAM_Output")
+        try:
+            with zipfile.ZipFile(f"{backup_path_noext}.zip", 'a') as zipf:
+                for file in os.listdir(pam_output):
+                    file_path = os.path.join(pam_output, file)
+                    zipf.write(file_path, f"{which_hydrognss}\\DataRelease\\PAM_Output\\{file}")
+        except Exception as ex:
+            raise Exception("unable to add the PAM output figures to the "
+                "backup") from ex
+        _recycle(pam_output)
+
+        if start <= Proc.L1B <= end: # If L1B was executed.
+            logger.info("running the compare tool")
+            # Wee peel of two files from the L1B executable path.
+            should_be_bin, _, _ = conf[Conf.L1B_EXE].rpartition("\\")
+            should_be_L1B, _, _ = should_be_bin.rpartition("\\")
+            compare_L1B_exe: typing.Union[list[str], str] = glob.glob('**/compareL1B.exe',
+                root_dir=should_be_L1B, recursive=True)
+            if len(compare_L1B_exe) != 1:
+                logger.info("skipping compare L1B because too many were found {compare_L1B_exe}")
+                return
+            compare_L1B_exe = compare_L1B_exe[0]
+            compare_L1B_exe = os.path.join(should_be_L1B, compare_L1B_exe)
+            if not os.path.isfile(compare_L1B_exe):
+                logger.info("skipping compare L1B because it was not found")
+                return
+            run_processor(
+                compare_L1B_exe,
+                f"{backup_path_noext}.zip"
+            )
+            compare_tool_out_path = os.path.join(f"{conf[Conf.BACKUP_DIR]}",
+                    "compareL1B_output")
+            # As far as we understand there can either be SSTLplots_1_RR and
+            # SSTLplots_1_LR or the previous two with SSTLplots_5_RR and
+            # SSTLplots_5_LR. We are not so sure about this so the code
+            # looks like this (we do not really now what to consider an
+            # error condition or not.)
+            with zipfile.ZipFile(f"{backup_path_noext}.zip", 'a') as zipf:
+                for i in ['1', '5']:
+                    RR_plots_dir = os.path.join(compare_tool_out_path,
+                        f"{backup_name}_SSTLplots_{i}_RR")
+                    LR_plots_dir = os.path.join(compare_tool_out_path,
+                        f"{backup_name}_SSTLplots_{i}_LR")
+                    try:
+                        for file in os.listdir(RR_plots_dir):
+                            file_path = os.path.join(RR_plots_dir, file)
+                            zipf.write(file_path, f"{which_hydrognss}\\DataRelease\\SSTLplots_{i}_RR\\{file}")
+                    except FileNotFoundError:
+                        if i == '1':
+                            logger.exception("an error occurred while putting RR in the backup")
+                    try:
+                        for file in os.listdir(LR_plots_dir):
+                            file_path = os.path.join(LR_plots_dir, file)
+                            zipf.write(file_path, f"{which_hydrognss}\\DataRelease\\SSTLplots_{i}_LR\\{file}")
+                    except FileNotFoundError:
+                        if i == '1':
+                            logger.exception("an error occurred while putting LR in the backup")
+            _recycle(compare_tool_out_path)
+
+    logger.info("orchestration finished")
+    # NOTE: it would be cool to send a notificaiton:
+    # https://github.com/jithurjacob/Windows-10-Toast-Notifications/blob/master/win10toast/__init__.py
+    # https://learn.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shell_notifyicona
+    print("\a", end='')
 
 # NOTE: more than 'conf' the name should be 'conf_paths'
 def run(args: Args, conf: list[str], l1a_input_file: str) -> None:
@@ -407,142 +551,6 @@ def run(args: Args, conf: list[str], l1a_input_file: str) -> None:
 
     if backup and not os.path.isfile(backup):
         raise FileNotFoundError(backup)
-
-    def run_processor(file_path: str, arguments: str) -> None:
-        exe = file_path if file_path.endswith(".exe") \
-            else f"py {file_path}" if file_path.endswith(".py") \
-            else None
-
-        if exe is None:
-            raise ValueError(f"only python and exe files are supported, "
-                f"{file_path} is not supported")
-
-        working_dir, _, _ = file_path.rpartition('\\')
-
-        # We expect %COMSPEC% to be cmd.exe or something like that.
-        try:
-            cmd_with_args = f"{exe} {arguments}"
-            logger.info(f"launching '{cmd_with_args}'")
-            # NOTE: should I worry about 'universal_newlines'?
-            with subprocess.Popen(
-                args=cmd_with_args,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                cwd=working_dir,
-                text=True
-                ) as p:
-                assert p.stdout is not None # Just for mypy.
-                for line in p.stdout:
-                    # Since in io.TextIOBase lines are split on '\n' if there are
-                    # any \r in the sequence we just ignore it.
-                    logger.info(line.rstrip())
-                    # TODO: Sometimes the output seems to stop in the console
-                    # until you press enter it is the so called "mark mode" and
-                    # it can be programmatically detected and disabled.
-                    # https://stackoverflow.com/questions/13599822/command-prompt-gets-stuck-and-continues-on-enter-key-press
-                    # https://stackoverflow.com/questions/41409727/turn-off-windows-10-console-mark-mode-from-my-application
-
-                if p.wait() != 0:
-                    raise ChildProcessError(f"{file_path} exited with error code {p.returncode}")
-        except Exception as ex:
-            raise Exception(f"something went wrong during the execution of "
-                f"{file_path}") from ex
-
-    def check_existence_of_netcdf_file(start_dir: str):
-        walker = os.walk(
-            start_dir,
-            onerror=lambda ex: logger.exception("an error occured while traversing"
-                f"'{ex.filename}' we ignore it and keep going"))
-        for dirpath, dirnames, filenames in walker:
-            if any(filename.endswith(".nc") for filename in filenames):
-                return
-
-        raise ChildProcessError(f"no NetCDF file generated in '{start_dir}'")
-
-    def do_backup_and_pam() -> None:
-        timestamp = f"{int(time.time())}"
-        assert len(timestamp) == 10
-        assert experiment_name
-        assert which_hydrognss
-        backup_name = f"{experiment_name}_{timestamp}"
-        backup_path_noext = os.path.join(conf[Conf.BACKUP_DIR], backup_name)
-        logger.info("doing the backup")
-        try:
-            shutil.make_archive(backup_path_noext, "zip", data_dir, which_hydrognss)
-        except Exception as ex:
-            raise Exception("unable to make backup archive") from ex
-        if pam:
-            logger.info("running the PAM")
-            run_processor(
-                conf[Conf.PAM_EXE],
-                f"{PROC_NAMES_PAM[end]} {auxiliary_data_dir} "
-                f"{conf[Conf.BACKUP_DIR]} {backup_name}"
-            )
-
-            pam_output = os.path.join(conf[Conf.BACKUP_DIR], "PAM_Output")
-            try:
-                with zipfile.ZipFile(f"{backup_path_noext}.zip", 'a') as zipf:
-                    for file in os.listdir(pam_output):
-                        file_path = os.path.join(pam_output, file)
-                        zipf.write(file_path, f"{which_hydrognss}\\DataRelease\\PAM_Output\\{file}")
-            except Exception as ex:
-                raise Exception("unable to add the PAM output figures to the "
-                    "backup") from ex
-            _recycle(pam_output)
-
-            if start <= Proc.L1B <= end: # If L1B was executed.
-                logger.info("running the compare tool")
-                # Wee peel of two files from the L1B executable path.
-                should_be_bin, _, _ = conf[Conf.L1B_EXE].rpartition("\\")
-                should_be_L1B, _, _ = should_be_bin.rpartition("\\")
-                compare_L1B_exe: typing.Union[list[str], str] = glob.glob('**/compareL1B.exe',
-                    root_dir=should_be_L1B, recursive=True)
-                if len(compare_L1B_exe) != 1:
-                    logger.info("skipping compare L1B because too many were found {compare_L1B_exe}")
-                    return
-                compare_L1B_exe = compare_L1B_exe[0]
-                compare_L1B_exe = os.path.join(should_be_L1B, compare_L1B_exe)
-                if not os.path.isfile(compare_L1B_exe):
-                    logger.info("skipping compare L1B because it was not found")
-                    return
-                run_processor(
-                    compare_L1B_exe,
-                    f"{backup_path_noext}.zip"
-                )
-                compare_tool_out_path = os.path.join(f"{conf[Conf.BACKUP_DIR]}",
-                        "compareL1B_output")
-                # As far as we understand there can either be SSTLplots_1_RR and
-                # SSTLplots_1_LR or the previous two with SSTLplots_5_RR and
-                # SSTLplots_5_LR. We are not so sure about this so the code
-                # looks like this (we do not really now what to consider an
-                # error condition or not.)
-                with zipfile.ZipFile(f"{backup_path_noext}.zip", 'a') as zipf:
-                    for i in ['1', '5']:
-                        RR_plots_dir = os.path.join(compare_tool_out_path,
-                            f"{backup_name}_SSTLplots_{i}_RR")
-                        LR_plots_dir = os.path.join(compare_tool_out_path,
-                            f"{backup_name}_SSTLplots_{i}_LR")
-                        try:
-                            for file in os.listdir(RR_plots_dir):
-                                file_path = os.path.join(RR_plots_dir, file)
-                                zipf.write(file_path, f"{which_hydrognss}\\DataRelease\\SSTLplots_{i}_RR\\{file}")
-                        except FileNotFoundError:
-                            if i == '1':
-                                logger.exception("an error occurred while putting RR in the backup")
-                        try:
-                            for file in os.listdir(LR_plots_dir):
-                                file_path = os.path.join(LR_plots_dir, file)
-                                zipf.write(file_path, f"{which_hydrognss}\\DataRelease\\SSTLplots_{i}_LR\\{file}")
-                        except FileNotFoundError:
-                            if i == '1':
-                                logger.exception("an error occurred while putting LR in the backup")
-                _recycle(compare_tool_out_path)
-
-        logger.info("orchestration finished")
-        # NOTE: it would be cool to send a notificaiton:
-        # https://github.com/jithurjacob/Windows-10-Toast-Notifications/blob/master/win10toast/__init__.py
-        # https://learn.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shell_notifyicona
-        print("\a", end='')
 
     if should_clean:
         logger.info("cleaning up from previous execution")
@@ -659,7 +667,7 @@ def run(args: Args, conf: list[str], l1a_input_file: str) -> None:
 
         check_existence_of_netcdf_file(l1a_l1b_dir())
         if end == Proc.L1A:
-            do_backup_and_pam()
+            do_backup_and_pam(start, end, conf, experiment_name, which_hydrognss, pam)
             return
 
     assert experiment_name, "This variable should have been assigned by now"
@@ -733,7 +741,7 @@ def run(args: Args, conf: list[str], l1a_input_file: str) -> None:
             f"{start_date} {end_date}"
         )
         if end == Proc.L1B:
-            do_backup_and_pam()
+            do_backup_and_pam(start, end, conf, experiment_name, which_hydrognss, pam)
             return
 
     match end:
@@ -773,7 +781,7 @@ def run(args: Args, conf: list[str], l1a_input_file: str) -> None:
             assert False
 
     check_existence_of_netcdf_file(os.path.join(data_release_dir(), PROC_OUTPUT_DIRS[end]))
-    do_backup_and_pam()
+    do_backup_and_pam(start, end, conf, experiment_name, which_hydrognss, pam)
 
 # TODO: add the name for the file object for better error messages.
 def gui(state_file: typing.TextIO, config_file: typing.TextIO, conf: list[str], log_dir: str) -> None:
