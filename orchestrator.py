@@ -23,19 +23,6 @@ various it file system atomicity problems, it expects to be the only one to
 operate on the various files and directories. Solving this problem is hard and
 since this orchestrator is meant to be executed in trusted environments we did
 not tackle it.
-
-Things that I would do better next time:
-  * Do not rely too much on Python's shutil for archives since for validation
-    and custom insertion logic I still have to write my own functions;
-  * Do not nest functions definitions.
-  * Use a global logger object.
-  * Move around directories this shortens a lot of paths and at least makes sure
-    that the directory that I'm in can't be deleted.
-  * Parse an in memory CSV of the various conf defaults etc... And generate at
-    startup the various lists, since the "inpact on startup performance" is
-    really negligible.
-  * use pathlib.Path to give a type to pats that is different from str.
-  * create an enum for HydroGNSS-1 or HydroGNSS-2??
 """
 
 VERSION = "6.4"
@@ -48,6 +35,7 @@ import io
 import json
 import logging
 import os
+# import pathlib
 import re
 import shutil
 import subprocess
