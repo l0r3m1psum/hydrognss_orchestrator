@@ -340,7 +340,7 @@ class LogToFileContext:
             logger.error("the orchestration terminated baddly")
         return True # To swallow the exception.
 
-def run_processor(file_path: str, arguments: str) -> None:
+def _run_processor(file_path: str, arguments: str) -> None:
     exe = file_path if file_path.endswith(".exe") \
         else f"py {file_path}" if file_path.endswith(".py") \
         else None
@@ -380,7 +380,7 @@ def run_processor(file_path: str, arguments: str) -> None:
         raise Exception(f"something went wrong during the execution of "
             f"{file_path}") from ex
 
-def check_existence_of_netcdf_file(start_dir: str):
+def _check_existence_of_netcdf_file(start_dir: str):
     walker = os.walk(
         start_dir,
         onerror=lambda ex: logger.exception("an error occured while traversing"
@@ -392,7 +392,7 @@ def check_existence_of_netcdf_file(start_dir: str):
     raise ChildProcessError(f"no NetCDF file generated in '{start_dir}'")
 
 # NOTE: make which_hydrognss an enum?
-def do_backup_and_pam(start: Proc, end: Proc, conf: list[str],
+def _do_backup_and_pam(start: Proc, end: Proc, conf: list[str],
     experiment_name: str, which_hydrognss: str, pam: bool) -> None:
 
     assert start <= end
@@ -401,8 +401,6 @@ def do_backup_and_pam(start: Proc, end: Proc, conf: list[str],
 
     timestamp = f"{int(time.time())}"
     assert len(timestamp) == 10
-    assert experiment_name
-    assert which_hydrognss
     backup_name = f"{experiment_name}_{timestamp}"
     backup_path_noext = os.path.join(conf[Conf.BACKUP_DIR], backup_name)
     logger.info("doing the backup")
@@ -414,7 +412,7 @@ def do_backup_and_pam(start: Proc, end: Proc, conf: list[str],
     if pam:
         logger.info("running the PAM")
         auxiliary_data_dir = os.path.join(data_dir, "Auxiliary_Data")
-        run_processor(
+        _run_processor(
             conf[Conf.PAM_EXE],
             f"{PROC_NAMES_PAM[end]} {auxiliary_data_dir} "
             f"{conf[Conf.BACKUP_DIR]} {backup_name}"
@@ -446,7 +444,7 @@ def do_backup_and_pam(start: Proc, end: Proc, conf: list[str],
             if not os.path.isfile(compare_L1B_exe):
                 logger.info("skipping compare L1B because it was not found")
                 return
-            run_processor(
+            _run_processor(
                 compare_L1B_exe,
                 f"{backup_path_noext}.zip"
             )
@@ -522,6 +520,8 @@ def run(args: Args, conf: list[str], l1a_input_file: str) -> None:
     # We convert our log level number to Python's standard library log level number.
     logger.setLevel((log_level+1)*10)
 
+    logger.info(f"running orchestrator version {VERSION} with:\n{args=}\n{conf=}\n{l1a_input_file=}")
+
     # Doing some minimal validation here.
 
     if os.name != "nt":
@@ -590,7 +590,7 @@ def run(args: Args, conf: list[str], l1a_input_file: str) -> None:
 
     if start == Proc.L1A:
         logger.info("runnning L1A")
-        run_processor(
+        _run_processor(
             conf[Conf.L1A_EXE],
             # No validation is performed on this argument because L1A should do
             # it any way.
@@ -653,13 +653,15 @@ def run(args: Args, conf: list[str], l1a_input_file: str) -> None:
         except Exception as ex:
             raise Exception("unable to copy files for the PAM") from ex
 
-        check_existence_of_netcdf_file(l1a_l1b_dir())
+        _check_existence_of_netcdf_file(l1a_l1b_dir())
         if end == Proc.L1A:
-            do_backup_and_pam(start, end, conf, experiment_name, which_hydrognss, pam)
+            _do_backup_and_pam(start, end, conf, experiment_name, which_hydrognss, pam)
             return
 
-    assert experiment_name, "This variable should have been assigned by now"
-    assert which_hydrognss, "This variable should have been assigned by now"
+    assert _experiment_name_format.search(experiment_name), \
+        "This variable should have been assigned by now"
+    assert which_hydrognss == "HydroGNSS-1" or which_hydrognss == "HydroGNSS-2", \
+        "This variable should have been assigned by now"
 
     logger.info("detecting the dates of the simulation")
     try:
@@ -702,76 +704,76 @@ def run(args: Args, conf: list[str], l1a_input_file: str) -> None:
     # Here we expect to have QGIS correctly put in the path
     if start == Proc.L1A or start == Proc.L1B:
         logger.info("runnning L1B")
-        run_processor(
+        _run_processor(
             conf[Conf.L1B_EXE],
             f"{start_date} {end_date}"
         )
         logger.info("runnning L1B_MM")
-        run_processor(
+        _run_processor(
             conf[Conf.L1B_MM_EXE],
             f"{start_date} {end_date}"
         )
         logger.info("runnning L1B_CX")
-        run_processor(
+        _run_processor(
             conf[Conf.L1B_CX_EXE],
             # f"-P {data_release_dir()} --Log {LOG_LEVELS_IEEC[log_level]}"
             f"--StartDateTime {start_date}T00:00 --StopDateTime {end_date}T23:59"
         )
         logger.info("runnning L1B_CC")
-        run_processor(
+        _run_processor(
             conf[Conf.L1B_CC_EXE],
             # f"-P {data_release_dir()}" # Is this done by IEEC too?
             f"--StartDateTime {start_date}T00:00 --StopDateTime {end_date}T23:59"
         )
         logger.info("running L1B_MM again")
-        run_processor(
+        _run_processor(
             conf[Conf.L1B_MM_EXE],
             f"{start_date} {end_date}"
         )
         if end == Proc.L1B:
-            do_backup_and_pam(start, end, conf, experiment_name, which_hydrognss, pam)
+            _do_backup_and_pam(start, end, conf, experiment_name, which_hydrognss, pam)
             return
 
+    config_file_to_use = "..\\conf\\config_H1.txt" if which_hydrognss == "HydroGNSS-1" \
+        else "..\\conf\\config_H2.txt"
     match end:
         case Proc.L2FT:
             logger.info("running L2FT")
             # This does not support logging options apparently.
             # To decide if repr or oper shall be run the appropriate processor
             # can be selected from the options.
-            run_processor(
+            _run_processor(
                 conf[Conf.L2FT_EXE],
-                f"{start_date} {end_date} ..\\conf\\H1conf_track.txt"
+                f"{start_date} {end_date} {config_file_to_use}"
             )
         case Proc.L2FB:
             logger.info("running L2FB")
-            run_processor(
+            _run_processor(
                 conf[Conf.L2FB_EXE],
                 f"{start_date} {end_date} ..\\conf"
             )
         case Proc.L2SM:
             logger.info("running L2SM")
             l2sm_working_dir = os.path.dirname(os.path.dirname(conf[Conf.L2SM_EXE]))
-            run_processor(
+            _run_processor(
                 conf[Conf.L2SM_EXE],
-                # f"-input {l2sm_working_dir} {start_date}T00:00 {end_date}T12:59"
-                f"{start_date}T00:00 {end_date}T23:59 ..\\conf\\configuration.cfg"
+                f"{start_date}T00:00 {end_date}T23:59 {config_file_to_use}"
             )
         case Proc.L2SI:
             logger.info("running L2SI")
             l2si_dir = os.path.join(auxiliary_data_dir, "L2OP-SI")
-            run_processor(
+            _run_processor(
                 conf[Conf.L2SI_EXE],
                 f"--StartDateTime {start_date}T00:00 --StopDateTime {end_date}T23:59"
-                # ""
-                # f"-P {data_release_dir} -M {l2si_dir} --Log {LOG_LEVELS_IEEC[log_level]}"
             )
         case other:
             assert False
 
-    check_existence_of_netcdf_file(os.path.join(data_release_dir(), PROC_OUTPUT_DIRS[end]))
-    do_backup_and_pam(start, end, conf, experiment_name, which_hydrognss, pam)
+    _check_existence_of_netcdf_file(os.path.join(data_release_dir(), PROC_OUTPUT_DIRS[end]))
+    _do_backup_and_pam(start, end, conf, experiment_name, which_hydrognss, pam)
 
 # TODO: add the name for the file object for better error messages.
+# Sadly state and configuration files have not been versioned from the start.
 def gui(state_file: typing.TextIO, config_file: typing.TextIO, conf: list[str], log_dir: str) -> None:
     """This function creates a user friendly GUI to operate the orchestrator."""
     assert len(conf) == len(Conf)
