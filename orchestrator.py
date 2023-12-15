@@ -701,17 +701,24 @@ def run(args: Args, conf: list[str], l1a_input_file: str) -> None:
     except Exception as ex:
         raise Exception("unable to detect the dates of the simulation") from ex
 
+    config_file_to_use = "..\\conf\\config_H1.txt" if which_hydrognss == "HydroGNSS-1" \
+        else "..\\conf\\config_H2.txt"
+
     # Here we expect to have QGIS correctly put in the path
     if start == Proc.L1A or start == Proc.L1B:
         logger.info("runnning L1B")
+        # config=C:\L1BOP\conf\hgdevConfiguration0p7_ReadL1a.xml,StartDateTime=20211212T00:00:00,StopDateTime=20211212T06:00:00
+        args_for_l1b = f"\"config={config_file_to_use}," \
+               f"StartDateTime={start_date.replace('-','')}T{start_hour[1:]}:00:00," \
+               f"StopDateTime={end_date.replace('-','')}T{end_hour[1:]}:00:00\""
         _run_processor(
             conf[Conf.L1B_EXE],
-            f"{start_date} {end_date}"
+            args_for_l1b
         )
         logger.info("runnning L1B_MM")
         _run_processor(
             conf[Conf.L1B_MM_EXE],
-            f"{start_date} {end_date}"
+            args_for_l1b
         )
         logger.info("runnning L1B_CX")
         _run_processor(
@@ -728,14 +735,12 @@ def run(args: Args, conf: list[str], l1a_input_file: str) -> None:
         logger.info("running L1B_MM again")
         _run_processor(
             conf[Conf.L1B_MM_EXE],
-            f"{start_date} {end_date}"
+            args_for_l1b
         )
         if end == Proc.L1B:
             _do_backup_and_pam(start, end, conf, experiment_name, which_hydrognss, pam)
             return
 
-    config_file_to_use = "..\\conf\\config_H1.txt" if which_hydrognss == "HydroGNSS-1" \
-        else "..\\conf\\config_H2.txt"
     match end:
         case Proc.L2FT:
             logger.info("running L2FT")
