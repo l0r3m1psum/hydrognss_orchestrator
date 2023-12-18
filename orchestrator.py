@@ -25,7 +25,7 @@ since this orchestrator is meant to be executed in trusted environments we did
 not tackle it.
 """
 
-VERSION = "6.4"
+VERSION = "6.5"
 
 import argparse
 import enum
@@ -724,12 +724,14 @@ def run(args: Args, conf: list[str], l1a_input_file: str) -> None:
         _run_processor(
             conf[Conf.L1B_CX_EXE],
             # f"-P {data_release_dir()} --Log {LOG_LEVELS_IEEC[log_level]}"
+            # f"--StartDateTime {start_date}T00:00 --StopDateTime {end_date}T23:59 --ConfigFile {config_file_to_use}"
             f"--StartDateTime {start_date}T00:00 --StopDateTime {end_date}T23:59"
         )
         logger.info("runnning L1B_CC")
         _run_processor(
             conf[Conf.L1B_CC_EXE],
             # f"-P {data_release_dir()}" # Is this done by IEEC too?
+            # f"--StartDateTime {start_date}T00:00 --StopDateTime {end_date}T23:59 --ConfigFile {config_file_to_use}"
             f"--StartDateTime {start_date}T00:00 --StopDateTime {end_date}T23:59"
         )
         logger.info("running L1B_MM again")
@@ -755,7 +757,7 @@ def run(args: Args, conf: list[str], l1a_input_file: str) -> None:
             logger.info("running L2FB")
             _run_processor(
                 conf[Conf.L2FB_EXE],
-                f"{start_date} {end_date} ..\\conf"
+                f"{start_date} {end_date} {config_file_to_use}"
             )
         case Proc.L2SM:
             logger.info("running L2SM")
@@ -769,6 +771,7 @@ def run(args: Args, conf: list[str], l1a_input_file: str) -> None:
             l2si_dir = os.path.join(auxiliary_data_dir, "L2OP-SI")
             _run_processor(
                 conf[Conf.L2SI_EXE],
+                # f"--StartDateTime {start_date}T00:00 --StopDateTime {end_date}T23:59 --ConfigFile {config_file_to_use}"
                 f"--StartDateTime {start_date}T00:00 --StopDateTime {end_date}T23:59"
             )
         case other:
